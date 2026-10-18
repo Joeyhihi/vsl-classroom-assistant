@@ -200,6 +200,8 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
 - **Gate G7:** the owner approves STT, or it is deferred. GPU stays off by default unless the measurements justify turning it on.
 
 ### P8: Evaluation, accessibility, privacy, Windows
+
+- **Status (2026-10-18):** automated WCAG 2.2 AA checks (axe in Chrome, light + dark, colour contrast on) now cover every view, including the sign list, large display and subtitle panel. Network-egress and CSP checks pass. Still needed: the held-out signer report (B4), a manual WCAG audit, Deaf user sessions, the privacy checklist sign-off and a full Windows pass.
 - **Exit criteria:**
   - held-out signer report;
   - WCAG 2.2 AA audit plus Deaf user sessions;

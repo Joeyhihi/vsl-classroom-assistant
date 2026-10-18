@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-import { mockBackend, stubSpeech } from "./helpers";
+import { MOCK_HEALTH, mockBackend, stubSpeech } from "./helpers";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
@@ -34,8 +34,27 @@ for (const scheme of ["light", "dark"] as const) {
 
     await page.getByRole("button", { name: "Quyền riêng tư" }).click();
     await expectAccessible(page);
+
+    // P6 views: the large display shows the message sent above at 96 px.
+    await page.getByRole("button", { name: "Màn hình lớn" }).click();
+    await expect(page.getByTestId("large-display-message")).toContainText("Xin chào");
+    await expectAccessible(page);
+
+    await page.getByRole("button", { name: "Danh sách ký hiệu" }).click();
+    await expect(page.getByRole("heading", { name: "Danh sách ký hiệu được hỗ trợ" })).toBeVisible();
+    await expectAccessible(page);
   });
 }
+
+test("axe clean with the speech subtitle panel (P7, STT enabled)", async ({ page }) => {
+  await page.unrouteAll();
+  const health = structuredClone(MOCK_HEALTH) as { components: { stt: unknown } };
+  health.components.stt = { status: "ready", detail: "model=small device=cpu resident=false" };
+  await page.route("**/api/v1/health", (route) => route.fulfill({ json: health }));
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: /Giữ để nói/ })).toBeEnabled();
+  await expectAccessible(page);
+});
 
 test("axe clean with the offline banner and a camera error", async ({ page }) => {
   await page.unrouteAll();
