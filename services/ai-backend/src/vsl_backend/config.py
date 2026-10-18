@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     min_free_ram_mb: float = Field(default=1500.0, ge=0)
     resource_sweep_interval_s: float = Field(default=30.0, gt=0)
 
+    # P9 packaging: serve the built web app (apps/web/dist) from the backend, so
+    # the whole app is one origin started by scripts/run_app.py.
+    serve_web: bool = False
+    web_dist_dir: Path = Path("apps/web/dist")
+
     max_body_bytes: int = Field(default=64 * 1024, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
@@ -93,7 +98,12 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        origins = [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        if self.serve_web:  # the app's own origin when the backend serves it
+            for host in ("127.0.0.1", "localhost"):
+                if (own := f"http://{host}:{self.port}") not in origins:
+                    origins.append(own)
+        return origins
 
     @property
     def resolved_data_root(self) -> Path:

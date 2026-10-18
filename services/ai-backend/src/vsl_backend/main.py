@@ -20,6 +20,7 @@ from vsl_backend.logging_config import configure_logging
 from vsl_backend.recognition.classifiers import build_classifier
 from vsl_backend.recording.service import RecorderService
 from vsl_backend.security import install_security_middleware
+from vsl_backend.static import install_static_web
 from vsl_backend.stt.service import SttService
 
 logger = logging.getLogger(__name__)
@@ -69,4 +70,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_error_handlers(app)
     install_security_middleware(app, settings)
     app.include_router(v1_router)
+    install_static_web(app, settings)  # last: its catch-all route must not shadow the API
     return app

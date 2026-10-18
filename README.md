@@ -26,6 +26,13 @@ uv run python scripts/run_web.py       # terminal 2: frontend on http://localhos
 uv run python scripts/check.py         # all quality gates
 ```
 
+Classroom / pilot mode: one command builds the web app and serves everything from `http://127.0.0.1:8000`:
+
+```bash
+uv run python scripts/run_app.py --mock                 # demo with scripted predictions (any machine)
+uv run --extra windows python scripts/run_app.py        # Windows laptop with the real models
+```
+
 The development Mac (M1, 8 GB) runs **mock mode and unit tests only**. The real AI pipeline is tested on the Windows laptop. Details are in [docs/CROSS_PLATFORM_SETUP.md](docs/CROSS_PLATFORM_SETUP.md).
 
 ## Repository layout
@@ -51,6 +58,7 @@ docs/                  planning & architecture documents
 | [Security & privacy](docs/SECURITY_AND_PRIVACY.md) | [Cross-platform setup](docs/CROSS_PLATFORM_SETUP.md) |
 | [Testing strategy](docs/TESTING_STRATEGY.md) | [Roadmap](docs/ROADMAP.md) |
 | [Decisions (ADRs)](docs/DECISIONS.md) | [Risks & open questions](docs/RISKS_AND_OPEN_QUESTIONS.md) |
+| [Pilot protocol (draft)](docs/PILOT_PROTOCOL.md) | |
 
 ## Contributing data
 

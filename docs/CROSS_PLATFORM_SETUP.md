@@ -178,6 +178,18 @@ Prototype mode: the data is your own recordings (`DEV-01`), so the numbers are a
 
 Never train while the demo is running, and never on the Mac.
 
+## 8c2. Classroom mode: one command (P9) {#classroom-mode}
+
+`scripts/run_app.py` builds the web app (`npm run build`) and starts **one** backend that also serves it at `http://127.0.0.1:8000`, then opens Chrome. Use it for demos and the pilot. Development keeps the two-terminal setup (ADR-016).
+
+```powershell
+uv run --extra windows python scripts/run_app.py        # real models (Windows)
+uv run python scripts/run_app.py --mock                 # scripted demo (any machine, incl. the M1)
+uv run python scripts/run_app.py --no-build --no-open   # reuse the last build
+```
+
+The page gets its own CSP (`static.py`): `'wasm-unsafe-eval'` for MediaPipe and `blob:` for the push-to-talk AudioWorklet. Connections are allowed only to the app's own origin and loopback WebSockets. The app's own origin is added to the Origin allow-list automatically.
+
 ## 8d. Phase 7 workflow: speech-to-text subtitles (Windows, gated) {#phase-7-workflow}
 
 1. In `.env` set `VSL_STT_ENABLED=true`. Optionally set `VSL_STT_MODEL=base|small|medium`.
