@@ -87,6 +87,9 @@ def test_parse_wav_returns_normalised_samples() -> None:
         (b"not audio", "not a valid WAV"),
         (wav_bytes(seconds=0), "empty"),
     ],
+    # Short ids: pytest puts the test id in an environment variable, and Windows
+    # limits those to 32767 characters (a WAV-bytes id breaks the Windows CI).
+    ids=["44khz", "stereo", "too-long", "not-wav", "empty"],
 )
 def test_bad_audio_is_refused(data: bytes, message: str) -> None:
     with pytest.raises(AudioError, match=message):
