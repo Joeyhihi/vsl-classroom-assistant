@@ -206,7 +206,18 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - privacy checklist ([SECURITY_AND_PRIVACY.md](SECURITY_AND_PRIVACY.md#4-privacy-review-checklist-run-before-p8-and-p9));
   - full Windows pass.
 
-### P9: Packaging + controlled adult pilot
+### P9: Packaging + controlled adult pilot — current: packaging and tools built 2026-10-18 (PR pending review)
+
+- **Status:**
+
+  | Deliverable | Status |
+  |---|---|
+  | `static.py`: the backend serves the built SPA on one origin, with a page CSP | Done (tested; mock run checked in Chrome on the M1) |
+  | One command per OS | Done: `scripts/run_app.py` (builds, serves, opens Chrome) |
+  | Pilot protocol with consent | **Draft** ([PILOT_PROTOCOL.md](PILOT_PROTOCOL.md)); needs B2, legal and ethics review |
+  | Feedback analysis | Done: `scripts/feedback_report.py` |
+  | Pilot run + findings | Blocked on G5, B2 and the review of the protocol |
+
 - **Deliverables:**
   - `static.py`, so the backend serves the built SPA from one origin, started with one command per OS;
   - pilot protocol with consent;
