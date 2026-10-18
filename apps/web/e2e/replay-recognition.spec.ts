@@ -65,38 +65,54 @@ test("hidden tab pauses recognition visibly", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Tiếp tục" })).toBeVisible();
 });
 
-test("recorder: one synthetic take, landmarks only", async ({ page }) => {
+test("recorder: session with SELF consent, synthetic take saved to DATA_ROOT", async ({ page }) => {
   await page.getByRole("button", { name: "Ghi mẫu" }).click();
-  await page.getByLabel("Mã ký hiệu (ví dụ DEV_01)").fill("DEV_01");
-  await page.getByLabel("Chữ hiển thị").fill("Thử nghiệm");
+  await expect(page.getByText("Từ vựng thử nghiệm của nhà phát triển")).toBeVisible();
+  await expect(page.getByLabel("Mã đồng ý")).toBeDisabled(); // SELF only until B2
+  await page.getByRole("button", { name: "Bắt đầu phiên ghi" }).click();
+  await expect(page.getByTestId("session-active")).toContainText("Phiên đang mở: S");
+
+  await page.getByLabel(/DEV_01/).check();
   await expect(page.getByLabel("Độ dài mỗi lượt").locator("option")).toHaveCount(2);
   await page.getByRole("button", { name: "Ghi một lượt (3 giây)" }).click();
-
   await expect(page.getByText("Chuẩn bị… 3")).toBeVisible();
   await expect(page.getByTestId("recording-banner")).toBeVisible({ timeout: 6000 });
-  await expect(page.getByTestId("take-count")).toHaveText("Đã ghi 1 lượt", { timeout: 8000 });
-  // The label is locked while takes exist, so takes cannot be mislabelled.
-  await expect(page.getByLabel("Mã ký hiệu (ví dụ DEV_01)")).toBeDisabled();
-  await expect(page.getByTestId("label-lock-hint")).toBeVisible();
-
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Tải tệp ghi (.json)" }).click();
-  const file = await download;
-  expect(file.suggestedFilename()).toBe("recording-DEV_01.json");
-  const body = JSON.parse(await (await file.createReadStream()).toArray().then((c) => Buffer.concat(c).toString("utf-8")));
-  expect(body.format).toBe("vsl-recording-v1");
-  expect(body.developer_own_data).toBe(true);
-  expect(body.takes[0].frames.length).toBeGreaterThan(30); // ~3 s at 15 fps
-  expect(body.takes[0].take_ms).toBe(3000);
-  expect(Object.keys(body.takes[0].frames[0]).sort()).toEqual(["face", "left_hand", "pose", "right_hand", "t_ms"]);
+  await expect(page.getByTestId("recorder-message")).toContainText("Đã lưu DEV_01", { timeout: 10_000 });
+  await expect(page.getByTestId("take-count")).toHaveText("Đã ghi 1 lượt trong phiên này");
 });
 
-test("recorder: clearing takes unlocks the label", async ({ page }) => {
+test("recorder: third-party consent is refused by the backend", async ({ request }) => {
+  const response = await request.post("/api/v1/recordings/sessions", {
+    data: {
+      signer_id: "SGN-0001",
+      consent_id: "C-1234",
+      image_width: 640,
+      image_height: 480,
+      feature_spec_version: "fs-1",
+      extractor_version: "synthetic",
+      extractor_backend: "replay",
+    },
+  });
+  expect(response.status()).toBe(403);
+  expect((await response.json()).error.code).toBe("CONSENT_REQUIRED");
+});
+
+test("review: replay a recorded sample and accept it", async ({ page }) => {
+  // Record one take first (each test has its own page).
   await page.getByRole("button", { name: "Ghi mẫu" }).click();
-  await page.getByLabel("Mã ký hiệu (ví dụ DEV_01)").fill("REST_DESK");
-  await page.getByLabel("Chữ hiển thị").fill("Nghỉ");
+  await page.getByRole("button", { name: "Bắt đầu phiên ghi" }).click();
+  await page.getByLabel(/REST_DESK/).check();
   await page.getByRole("button", { name: "Ghi một lượt (3 giây)" }).click();
-  await expect(page.getByTestId("take-count")).toHaveText("Đã ghi 1 lượt", { timeout: 8000 });
-  await page.getByRole("button", { name: "Xoá các lượt" }).click();
-  await expect(page.getByLabel("Mã ký hiệu (ví dụ DEV_01)")).toBeEnabled();
+  await expect(page.getByTestId("recorder-message")).toContainText("Đã lưu REST_DESK", { timeout: 10_000 });
+
+  await page.getByRole("button", { name: "Duyệt mẫu" }).click();
+  const list = page.getByTestId("review-list");
+  await expect(list).toBeVisible();
+  const before = await list.locator("li").count();
+  await list.locator("li").filter({ hasText: "REST_DESK" }).first().getByRole("button", { name: /Xem lại/ }).click();
+  await expect(page.getByTestId("review-current")).toBeVisible();
+  await expect(page.getByTestId("landmark-overlay")).toBeVisible();
+  await page.getByRole("button", { name: "Nhận", exact: true }).click();
+  await expect(page.getByTestId("review-current")).toBeHidden();
+  await expect.poll(async () => (await list.isVisible()) ? list.locator("li").count() : 0).toBe(before - 1);
 });

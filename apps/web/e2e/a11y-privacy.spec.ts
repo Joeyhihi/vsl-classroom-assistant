@@ -75,3 +75,18 @@ test("missing MediaPipe assets are a 404, not the SPA fallback page", async ({ r
   expect(response.status()).toBe(404);
   expect(await response.text()).toContain("bootstrap.py --with-models");
 });
+
+for (const scheme of ["light", "dark"] as const) {
+  test(`axe clean on the recorder and review views (${scheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Ghi mẫu" }).click();
+    await page.getByRole("button", { name: "Bắt đầu phiên ghi" }).click();
+    await expect(page.getByTestId("session-active")).toBeVisible();
+    await expectAccessible(page);
+
+    await page.getByRole("button", { name: "Duyệt mẫu" }).click();
+    await expect(page.getByRole("heading", { name: "Duyệt mẫu đã ghi" })).toBeVisible();
+    await expectAccessible(page);
+  });
+}

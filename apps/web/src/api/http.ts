@@ -1,4 +1,15 @@
-import type { DiagnosticsResponse, FeatureSpecWire } from "./generated/contracts";
+import type {
+  DiagnosticsResponse,
+  FeatureSpecWire,
+  RecorderConfig,
+  ReviewCreate,
+  SampleCreateContract,
+  SampleFrames,
+  SampleList,
+  SampleSummary,
+  SessionCreate,
+  SessionCreated,
+} from "./generated/contracts";
 import { isHealthResponse, type HealthResponse } from "./types";
 
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? "/api/v1";
@@ -46,3 +57,48 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchFeatureSpec = () => getJson<FeatureSpecWire>("/feature-spec");
 export const fetchDiagnostics = () => getJson<DiagnosticsResponse>("/diagnostics");
+
+// --- recorder (Phase 4) ------------------------------------------------------------
+
+/** Error from the API's error envelope, with its code for the Vietnamese message map. */
+export class ApiCallError extends Error {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiCallError";
+  }
+}
+
+async function sendJson<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new ApiCallError("UNREACHABLE", "Backend did not respond");
+  }
+  const data: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    throw new ApiCallError(error?.code ?? "INTERNAL", error?.message ?? `HTTP ${response.status}`);
+  }
+  return data as T;
+}
+
+export const fetchRecorderConfig = () => sendJson<RecorderConfig>("GET", "/recordings/config");
+export const createRecordingSession = (body: SessionCreate) =>
+  sendJson<SessionCreated>("POST", "/recordings/sessions", body);
+export const uploadSample = (sessionId: string, body: SampleCreateContract) =>
+  sendJson<SampleSummary>("POST", `/recordings/sessions/${encodeURIComponent(sessionId)}/samples`, body);
+export const listSamples = (status?: string) =>
+  sendJson<SampleList>("GET", `/recordings/samples${status ? `?status=${encodeURIComponent(status)}` : ""}`);
+export const fetchSampleFrames = (sampleId: string) =>
+  sendJson<SampleFrames>("GET", `/recordings/samples/${encodeURIComponent(sampleId)}/frames`);
+export const reviewSample = (sampleId: string, body: ReviewCreate) =>
+  sendJson<SampleSummary>("POST", `/recordings/samples/${encodeURIComponent(sampleId)}/review`, body);
