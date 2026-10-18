@@ -1,5 +1,6 @@
 import type { PredictionMessage, ScoredLabelWire } from "../../api/generated/contracts";
 import { alternatives } from "../../features/recognition/recognitionMachine";
+import { iconFor } from "../../features/vocabulary/icons";
 import { vi } from "../../i18n/vi";
 import { StatusLine } from "../ui/StatusLine";
 
@@ -21,7 +22,7 @@ export function PredictionCard({ candidate, lastRejected, skipped, speechBlocked
         <div className="prediction__card prediction__card--confident" data-testid="prediction-candidate">
           <p className="prediction__text" lang="vi">
             <span className="prediction__icon" aria-hidden="true">
-              ◆
+              {iconFor(top.icon)}
             </span>{" "}
             {top.text_vi}
           </p>
@@ -49,7 +50,7 @@ export function PredictionCard({ candidate, lastRejected, skipped, speechBlocked
                 aria-label={vi.candidate.choose(label.text_vi)}
                 onClick={() => onConfirm(label, candidate)}
               >
-                <span lang="vi">{label.text_vi}</span>
+                <span aria-hidden="true">{iconFor(label.icon)}</span> <span lang="vi">{label.text_vi}</span>
               </button>
             ))}
             <button type="button" className="btn" onClick={onDismiss}>

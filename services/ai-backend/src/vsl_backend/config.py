@@ -64,6 +64,11 @@ class Settings(BaseSettings):
     dev_vocabulary_path: Path = Path("ml/vocabulary/vocabulary.dev.json")
     recording_max_body_bytes: int = Field(default=2 * 1024 * 1024, gt=0)
 
+    # ResourceManager (ADR-015): heavy engines (STT from P7) only.
+    heavy_model_idle_unload_s: float = Field(default=300.0, gt=0)
+    min_free_ram_mb: float = Field(default=1500.0, ge=0)
+    resource_sweep_interval_s: float = Field(default=30.0, gt=0)
+
     max_body_bytes: int = Field(default=64 * 1024, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 

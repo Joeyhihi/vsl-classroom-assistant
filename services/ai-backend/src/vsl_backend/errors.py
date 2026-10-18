@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from vsl_backend.inference.resource_manager import ResourceExhausted
 from vsl_backend.schemas.common import ErrorBody, ErrorCode, ErrorResponse
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,16 @@ def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _app_error(request: Request, exc: AppError) -> JSONResponse:
         return error_response(request, exc.code, exc.message, exc.status_code, exc.details)
+
+    @app.exception_handler(ResourceExhausted)
+    async def _resource_exhausted(request: Request, exc: ResourceExhausted) -> JSONResponse:
+        return error_response(
+            request,
+            ErrorCode.RESOURCE_EXHAUSTED,
+            str(exc),
+            503,
+            {"available_mb": round(exc.available_mb), "required_mb": round(exc.required_mb)},
+        )
 
     @app.exception_handler(RequestValidationError)
     async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:

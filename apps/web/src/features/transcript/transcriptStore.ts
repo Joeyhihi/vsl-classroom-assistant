@@ -2,6 +2,15 @@ import { useCallback, useReducer } from "react";
 
 // Mirrors the TranscriptEntry contract in docs/API_CONTRACTS.md.
 // In memory only; exported solely by explicit user action.
+export type FeedbackVerdict = "correct" | "incorrect" | "unsure";
+
+/** Where a sign entry came from, so the user can give feedback on it (FR-13). */
+export interface PredictionOrigin {
+  session_id: string;
+  prediction_id: string;
+  model_id: string;
+}
+
 export interface TranscriptEntry {
   id: string;
   created_at: string;
@@ -9,7 +18,10 @@ export interface TranscriptEntry {
   speaker: "student" | "teacher";
   text: string;
   gloss_id?: string;
+  icon?: string;
   confidence?: number;
+  origin?: PredictionOrigin;
+  feedback?: FeedbackVerdict;
   confirmed: boolean;
   spoken: boolean;
 }
@@ -39,10 +51,13 @@ export function createManualEntry(
 
 /** A confirmed sign prediction (never added without the user's confirmation). */
 export function createSignEntry(
-  label: { gloss_id: string; text_vi: string; score: number },
+  label: { gloss_id: string; text_vi: string; score: number; icon?: string },
   now: Date = new Date(),
+  origin?: PredictionOrigin,
 ): TranscriptEntry {
   return {
+    ...(origin ? { origin } : {}),
+    ...(label.icon ? { icon: label.icon } : {}),
     id: crypto.randomUUID(),
     created_at: now.toISOString(),
     source: "sign",
@@ -58,6 +73,7 @@ export function createSignEntry(
 type Action =
   | { type: "add"; entry: TranscriptEntry }
   | { type: "mark_spoken"; id: string }
+  | { type: "mark_feedback"; id: string; verdict: FeedbackVerdict }
   | { type: "clear" };
 
 export function transcriptReducer(state: TranscriptEntry[], action: Action): TranscriptEntry[] {
@@ -66,6 +82,8 @@ export function transcriptReducer(state: TranscriptEntry[], action: Action): Tra
       return action.entry.text ? [...state, action.entry] : state;
     case "mark_spoken":
       return state.map((e) => (e.id === action.id ? { ...e, spoken: true } : e));
+    case "mark_feedback":
+      return state.map((e) => (e.id === action.id ? { ...e, feedback: action.verdict } : e));
     case "clear":
       return [];
   }
@@ -77,6 +95,10 @@ export function useTranscript() {
     entries,
     add: useCallback((entry: TranscriptEntry) => dispatch({ type: "add", entry }), []),
     markSpoken: useCallback((id: string) => dispatch({ type: "mark_spoken", id }), []),
+    markFeedback: useCallback(
+      (id: string, verdict: FeedbackVerdict) => dispatch({ type: "mark_feedback", id, verdict }),
+      [],
+    ),
     clear: useCallback(() => dispatch({ type: "clear" }), []),
   };
 }

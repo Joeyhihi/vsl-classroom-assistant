@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import type { ScoredLabelWire } from "./api/generated/contracts";
+import type { PredictionMessage, ScoredLabelWire } from "./api/generated/contracts";
+import { deleteFeedback, sendFeedback } from "./api/http";
 
 import { ConnectionBanner } from "./components/system/ConnectionBanner";
 import { useCamera } from "./features/camera/useCamera";
@@ -13,25 +14,28 @@ import {
   createManualEntry,
   createSignEntry,
   useTranscript,
+  type FeedbackVerdict,
   type TranscriptEntry,
 } from "./features/transcript/transcriptStore";
 import { useTts } from "./features/tts/useTts";
+import { useVocabulary } from "./features/vocabulary/useVocabulary";
 import { vi } from "./i18n/vi";
 import { CommunicationView } from "./views/CommunicationView";
+import { LargeDisplayView } from "./views/LargeDisplayView";
 import { PrivacyView } from "./views/PrivacyView";
 import { RecorderView } from "./views/RecorderView";
 import { ReviewView } from "./views/ReviewView";
 import { SettingsView } from "./views/SettingsView";
+import { SignGuideView } from "./views/SignGuideView";
 
-type View = "communicate" | "settings" | "privacy" | "record" | "review";
+type View = "communicate" | "display" | "guide" | "settings" | "privacy" | "record" | "review";
 
 // Build-time switches (.env, docs/CROSS_PLATFORM_SETUP.md §5).
 const SOURCE_KIND: SourceKind = import.meta.env.VITE_LANDMARK_SOURCE === "replay" ? "replay" : "camera";
 const RECORDER_ENABLED = import.meta.env.VITE_ENABLE_RECORDER === "true";
 const MIN_FPS = Number(import.meta.env.VITE_MIN_FPS) || 15;
-const VIEWS: readonly View[] = RECORDER_ENABLED
-  ? ["communicate", "settings", "privacy", "record", "review"]
-  : ["communicate", "settings", "privacy"];
+const BASE_VIEWS: readonly View[] = ["communicate", "display", "guide", "settings", "privacy"];
+const VIEWS: readonly View[] = RECORDER_ENABLED ? [...BASE_VIEWS, "record", "review"] : BASE_VIEWS;
 
 export function App() {
   const [view, setView] = useState<View>("communicate");
@@ -42,6 +46,8 @@ export function App() {
   const tts = useTts(settings);
   const transcript = useTranscript();
   const isMock = backend.kind === "online" && backend.health.model_mode === "mock";
+  const online = backend.kind === "online";
+  const vocabulary = useVocabulary(online, online ? backend.health.model_mode : null);
   const stream = camera.state.kind === "active" ? camera.state.stream : null;
   const recognition = useRecognitionSession({
     sourceKind: SOURCE_KIND,
@@ -84,18 +90,41 @@ export function App() {
     if (speak) speakEntry(entry);
   };
 
-  const confirmPrediction = (label: ScoredLabelWire) => {
-    const entry = createSignEntry(label);
+  const confirmPrediction = (label: ScoredLabelWire, prediction: PredictionMessage) => {
+    const sessionId = recognition.state.sessionId;
+    const origin = sessionId
+      ? { session_id: sessionId, prediction_id: prediction.prediction_id, model_id: prediction.model_id }
+      : undefined;
+    const entry = createSignEntry(label, new Date(), origin);
     transcript.add(entry);
     recognition.resolveCandidate();
     // Scripted mock output is never spoken (ADR-016).
     if (canSpeakPrediction(recognition.state.model) && tts.availability === "ready") speakEntry(entry);
   };
 
+  const submitFeedback = async (entry: TranscriptEntry, verdict: FeedbackVerdict, expected: string | null) => {
+    if (!entry.origin) return;
+    await sendFeedback({
+      ...entry.origin,
+      predicted_gloss_id: entry.gloss_id ?? null,
+      confidence: entry.confidence ?? 0,
+      verdict,
+      expected_gloss_id: expected,
+    });
+    transcript.markFeedback(entry.id, verdict);
+  };
+  // Scripted mock output is not worth feedback; it would pollute the evaluation file.
+  const feedback =
+    !isMock && online
+      ? { vocabulary: vocabulary.kind === "ready" ? vocabulary.entries : [], onSend: submitFeedback }
+      : undefined;
+
   const deleteLocalData = () => {
     tts.cancel();
     transcript.clear();
     reset();
+    // Feedback lives in DATA_ROOT on this machine; best effort when the backend is down.
+    deleteFeedback().catch(() => undefined);
   };
 
   return (
@@ -151,7 +180,12 @@ export function App() {
             sourceKind={SOURCE_KIND}
             onConfirmPrediction={confirmPrediction}
             onAcceptL3={acceptL3}
+            feedback={feedback}
           />
+        )}
+        {view === "display" && <LargeDisplayView entries={transcript.entries} />}
+        {view === "guide" && (
+          <SignGuideView vocabulary={vocabulary} developerOnly={recognition.state.model?.developer_only ?? true} />
         )}
         {view === "settings" && (
           <SettingsView

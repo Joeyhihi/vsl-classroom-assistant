@@ -1,5 +1,17 @@
-import { transcriptToText, type TranscriptEntry } from "../../features/transcript/transcriptStore";
+import type { VocabularyEntry } from "../../api/generated/contracts";
+import {
+  transcriptToText,
+  type FeedbackVerdict,
+  type TranscriptEntry,
+} from "../../features/transcript/transcriptStore";
+import { iconFor } from "../../features/vocabulary/icons";
 import { vi } from "../../i18n/vi";
+import { FeedbackControls } from "./FeedbackControls";
+
+export interface FeedbackOptions {
+  vocabulary: readonly VocabularyEntry[];
+  onSend: (entry: TranscriptEntry, verdict: FeedbackVerdict, expected: string | null) => Promise<void>;
+}
 
 interface Props {
   entries: readonly TranscriptEntry[];
@@ -7,6 +19,8 @@ interface Props {
   speakingId: string | null;
   onSpeak: (entry: TranscriptEntry) => void;
   onClear: () => void;
+  /** Absent in mock mode: scripted predictions are not worth feedback. */
+  feedback?: FeedbackOptions;
 }
 
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -21,7 +35,7 @@ function exportTranscript(entries: readonly TranscriptEntry[]) {
   URL.revokeObjectURL(url);
 }
 
-export function TranscriptPanel({ entries, canSpeak, speakingId, onSpeak, onClear }: Props) {
+export function TranscriptPanel({ entries, canSpeak, speakingId, onSpeak, onClear, feedback }: Props) {
   return (
     <section className="card transcript" aria-labelledby="transcript-heading">
       <h2 id="transcript-heading">{vi.transcript.heading}</h2>
@@ -41,6 +55,11 @@ export function TranscriptPanel({ entries, canSpeak, speakingId, onSpeak, onClea
                 {entry.spoken && <span className="badge">{vi.transcript.spoken}</span>}
               </div>
               <p className="transcript__text" lang="vi">
+                {entry.source === "sign" && (
+                  <span className="transcript__icon" aria-hidden="true">
+                    {iconFor(entry.icon)}{" "}
+                  </span>
+                )}
                 {entry.text}
               </p>
               <button
@@ -52,6 +71,9 @@ export function TranscriptPanel({ entries, canSpeak, speakingId, onSpeak, onClea
               >
                 <span aria-hidden="true">🔊</span> {vi.transcript.speak}
               </button>
+              {feedback && entry.origin && (
+                <FeedbackControls entry={entry} vocabulary={feedback.vocabulary} onSend={feedback.onSend} />
+              )}
             </li>
           ))}
         </ol>

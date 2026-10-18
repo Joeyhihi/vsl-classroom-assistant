@@ -1,6 +1,8 @@
 import type {
   DiagnosticsResponse,
   FeatureSpecWire,
+  FeedbackCreate,
+  FeedbackCreated,
   RecorderConfig,
   ReviewCreate,
   SampleCreateContract,
@@ -9,6 +11,7 @@ import type {
   SampleSummary,
   SessionCreate,
   SessionCreated,
+  VocabularyResponse,
 } from "./generated/contracts";
 import { isHealthResponse, type HealthResponse } from "./types";
 
@@ -71,7 +74,7 @@ export class ApiCallError extends Error {
   }
 }
 
-async function sendJson<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function sendJson<T>(method: "GET" | "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
@@ -83,7 +86,7 @@ async function sendJson<T>(method: "GET" | "POST", path: string, body?: unknown)
   } catch {
     throw new ApiCallError("UNREACHABLE", "Backend did not respond");
   }
-  const data: unknown = await response.json().catch(() => null);
+  const data: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
     const error = (data as { error?: { code?: string; message?: string } } | null)?.error;
     throw new ApiCallError(error?.code ?? "INTERNAL", error?.message ?? `HTTP ${response.status}`);
@@ -102,3 +105,9 @@ export const fetchSampleFrames = (sampleId: string) =>
   sendJson<SampleFrames>("GET", `/recordings/samples/${encodeURIComponent(sampleId)}/frames`);
 export const reviewSample = (sampleId: string, body: ReviewCreate) =>
   sendJson<SampleSummary>("POST", `/recordings/samples/${encodeURIComponent(sampleId)}/review`, body);
+
+// --- vocabulary and feedback (Phase 6) -----------------------------------------------
+
+export const fetchVocabulary = () => sendJson<VocabularyResponse>("GET", "/vocabulary");
+export const sendFeedback = (body: FeedbackCreate) => sendJson<FeedbackCreated>("POST", "/feedback", body);
+export const deleteFeedback = () => sendJson<null>("DELETE", "/feedback");
