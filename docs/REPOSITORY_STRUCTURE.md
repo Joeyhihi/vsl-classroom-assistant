@@ -84,9 +84,12 @@ vsl-classroom-assistant/
 | `check.py` | Runs every local quality gate in order and reports a summary | P1 |
 | `doctor.py` | Prints OS, Python, Node, npm, uv, memory, and optional GPU details | P1 |
 | `guard_no_media.py` | Fails if tracked files include media, model, or dataset files, or anything over the size limit | P1 |
-| `gen_contracts.py` | Pydantic → JSON Schema → TypeScript (single pipeline) | P3 |
+| `gen_contracts.py` | Pydantic → JSON Schema → TypeScript (single pipeline; `--check` in check.py) | P3 |
+| `gen_synthetic_replay.py` | Writes `apps/web/public/replay/synthetic-replay-v1.json` from `vsl_features.synth` | P3 |
+| `build_templates.py` | Recorder exports (developer's own signs) or `--synthetic` → template model in `model-artifacts/` | P3 |
+| `mediapipe_assets.json` | Model URLs + pinned sha256 (trust-on-first-use, written on Windows) | P3 |
 | `_common.py` | Shared stdlib helpers for the scripts (tool lookup, subprocess) | P1 |
-| `fetch_mediapipe_assets.py` | Downloads pinned MediaPipe WASM and model files with sha256 checks. **Not run on the M1.** | P3 |
+| `fetch_mediapipe_assets.py` | Copies the WASM runtime from node_modules and downloads the models with sha256 checks (via `bootstrap.py --with-models`). **Refuses to run on macOS.** | P3 |
 
 There is deliberately no combined launcher. The frontend and backend always run in separate terminals (ADR-016).
 
@@ -99,7 +102,13 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | `src/views/` | `CommunicationView`, `SettingsView`, `PrivacyView` (P2); `RecorderView` (P3 minimal, P4 full); `SignGuideView`, `LargeDisplayView` (P6) | P2+ |
 | `src/components/` | `camera/` (CameraPanel, CameraPreview, CameraSelector), `transcript/` (TranscriptPanel), `compose/` (ManualTextInput), `speech/` (TtsStatus), `system/` (ConnectionBanner, BackendStatus), `ui/` (StatusLine) in P2; `recognition/` from P3 | P2+ |
 | `src/features/` | Hooks and logic: `health/` (P1, backend status polling), `camera/`, `landmarks/`, `recognition/`, `transcript/`, `tts/`, `settings/`, `recorder/` (P3), `stt/` (P7) | P2+ |
-| `src/api/` | `http.ts` (P1), `ws.ts` (P3), `types.ts` (hand-written P1 health type), `generated/contracts.d.ts` (P3) | P1+ |
+| `src/api/` | `http.ts`, `ws.ts` (RecognitionSocket: batching, heartbeat, close codes), `types.ts` (health runtime guard), `generated/contracts.ts` (generated, committed) | P1+ |
+| `src/features/landmarks/` | `packer.ts` (MediaPipe → wire frames using the server spec), `sources.ts` (Replay / Camera L1-L2 / Server L3), `extractor.ts` + `landmark.worker.ts` + `mediapipeRunner.ts` (worker spike) | P3 |
+| `src/features/metrics/` | `stats.ts` (fps, percentiles), `ladder.ts` (ADR-002 decision logic) | P3 |
+| `src/features/recognition/` | `recognitionMachine.ts` (reducer, candidate policy), `useRecognitionSession.ts` (orchestration, reconnect, pause, metrics) | P3 |
+| `src/components/recognition/` | RecognitionPanel, PredictionCard, LandmarkOverlay, PerformancePanel | P3 |
+| `public/replay/synthetic-replay-v1.json` | Synthetic replay fixture (no real person), shared with backend tests | P3 |
+| `scripts/json2ts.mjs` | JSON Schema → TypeScript, called by `scripts/gen_contracts.py` | P3 |
 | `src/i18n/vi.ts` | All UI strings and error-code messages, in Vietnamese | P1 |
 | `src/styles/` | `tokens.css` (colours, sizes, focus ring), `global.css` | P1 |
 | `src/test/` | Vitest setup and synthetic fixtures | P1 |
@@ -121,7 +130,9 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | `api/v1/feedback.py`, `api/v1/stt.py` | Feedback (P6), STT (P7) | P6–P7 |
 | `schemas/` | Pydantic models, the single source of the contract | P1+ |
 | `recognition/classifiers.py` | `Classifier` protocol; `MockClassifier` (P1); `TemplateClassifier` (P3); `OnnxClassifier` (P5) | P1+ |
-| `recognition/session.py`, `pipeline.py` | Per-connection session and orchestration | P3 |
+| `recognition/session.py`, `pipeline.py` | Transport-free session protocol (unit-tested) and frames → utterance → classifier → cooldown | P3 |
+| `api/v1/recognition_ws.py`, `api/v1/models.py` | WS transport (Origin check, heartbeat, threadpool for L3); vocabulary, models, feature-spec, diagnostics | P3 |
+| `inference/template_model.py` | Template model save/load/calibrate (no pickle) | P3 |
 | `extraction/server_extractor.py` | L3 server-side MediaPipe (optional extra) | P3 spike |
 | `inference/model_registry.py`, `resource_manager.py` | Artifact checks; heavy-model policy | P3 / P6–P7 |
 | `speech/stt_engine.py`, `audio_validation.py` | faster-whisper wrapper, WAV validation | P7 |
@@ -136,10 +147,11 @@ There is no backend TTS module in the MVP (ADR-010).
 | Module | Responsibility |
 |---|---|
 | `spec.py` | `FeatureSpec` (version, landmark subsets, exact shapes, face indices), served to the client |
+| `dtw.py` | DTW distance for the template classifier |
+| `synth.py` | Deterministic synthetic signer for fixtures and tests |
 | `frames.py` | Frame validation, presence masks |
 | `normalize.py` | Shoulder-centred, shoulder-width scaling, aspect-ratio correction, wrist-relative hands, mirroring |
 | `features.py` | Velocities, distances, masking |
-| `buffer.py` | Bounded ring buffer |
 | `segmentation.py` | Utterance segmenter state machine |
 | `decoding.py` | Temperature scaling, threshold, margin, cooldown |
 | `vocabulary.py` | Loading and validating the vocabulary YAML |

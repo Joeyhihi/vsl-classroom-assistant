@@ -36,9 +36,24 @@ class Settings(BaseSettings):
     mock_script: MockScript = "cycle"
     sign_model_id: str | None = None
 
+    model_artifacts_dir: Path = Path("model-artifacts")
     data_root: Path | None = None
     stt_enabled: bool = False
+
+    # L3 server-side extraction (ADR-002). Needs the `server-extraction` extra and
+    # the Holistic model fetched by `bootstrap.py --with-models` (Windows only).
     server_extraction_enabled: bool = False
+    holistic_model_path: Path = Path("apps/web/public/mediapipe/holistic_landmarker.task")
+
+    # Recognition WebSocket limits (docs/API_CONTRACTS.md).
+    max_session_s: int = Field(default=7200, gt=0)
+    max_fps: int = Field(default=30, gt=0)
+    max_fps_server_extraction: int = Field(default=20, gt=0)
+    max_batch: int = Field(default=8, gt=0)
+    ws_max_message_bytes: int = Field(default=64 * 1024, gt=0)
+    ws_max_binary_bytes: int = Field(default=200 * 1024, gt=0)
+    heartbeat_timeout_s: float = Field(default=15.0, gt=0)
+    cooldown_ms: float = Field(default=1500.0, ge=0)
 
     max_body_bytes: int = Field(default=64 * 1024, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"

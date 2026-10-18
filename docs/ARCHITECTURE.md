@@ -120,6 +120,12 @@ sequenceDiagram
 | **L2** | Browser | 480p input, Hand + Pose landmarkers, no face | L1 p50 < 15 fps for 5 s after a 3 s warm-up |
 | **L3** | Backend (same laptop) | Browser sends JPEG frames (≤640×480, ≤20 fps, ≤200 KB each) as binary WS messages; Python MediaPipe (`[server-extraction]` extra) | L2 is still < 15 fps. The UI **offers** L3, and the user must confirm. |
 
+**Implementation (P3):**
+- `features/metrics/ladder.ts` holds the pure decision logic (unit-tested). `useRecognitionSession` feeds it fps once per second.
+- When L1 is too slow, `extractionLevel` in settings becomes L2 for the next session. When L2 is too slow, the panel shows a button; pressing it stops the session and starts a new one at L3, which counts as a session boundary.
+- L1/L2 run through `features/landmarks/extractor.ts`, which tries a module Web Worker (`landmark.worker.ts`, ES-module WASM loader) and falls back to the main thread. The mode in use is shown in Settings → Hiệu năng (performance).
+- None of this has executed yet (no MediaPipe on the Mac); the Windows procedure is in CROSS_PLATFORM_SETUP §11.
+
 Rules for moving between levels:
 - Switches happen **only at session boundaries**, never in the middle of an utterance.
 - The chosen level is remembered per machine in `localStorage`.
@@ -132,7 +138,7 @@ Caveats about the ladder:
 
 ## 6. State management
 
-- **Browser UI state** lives in one reducer (`recognitionMachine.ts`) with explicit states: `idle`, `requesting_camera`, `camera_denied`, `camera_unavailable`, `loading_extractor`, `connecting`, `waiting_for_hands`, `ready`, `signing`, `processing`, `candidate`, `paused`, `disconnected`, `error`.
+- **Browser UI state** is split in two. Camera state lives in `useCamera` (`idle`, `requesting`, `active`, `failed: denied|unavailable|in_use|insecure|error`). Recognition state lives in `recognitionMachine.ts`, with `phase` (`idle`, `connecting`, `running`, `paused`, `reconnecting`, `failed`) plus the latest server state (`waiting_for_hands`, `ready`, `signing`) and the candidate/skipped/lastRejected fields. Both reducers are pure and unit-tested.
 - **Candidate policy.** There is at most one pending candidate. A new prediction replaces it, and the previous one moves to a small "Bỏ qua" (skipped) list. Candidates never time out on their own (WCAG 2.2.1). Speech plays only after an explicit Confirm.
 - **Backend session state** exists per WebSocket connection and is discarded on disconnect. Each connection is one session.
 - **What persists:** settings in `localStorage`, the chosen ladder level, and `feedback.jsonl` in `DATA_ROOT` (P6). Nothing else.
@@ -144,7 +150,7 @@ Caveats about the ladder:
 | Mode | Loads | Allowed when | Health `sign_model.status` |
 |---|---|---|---|
 | `mock` | Nothing. It does not import onnxruntime or mediapipe. Predictions are scripted (`cycle` or `timer`). | Only `VSL_ENV=dev` | `mock` |
-| `template` | `templates.npz` (`allow_pickle=False`) | any | `ready` or `unavailable` |
+| `template` | `templates.npz` (`allow_pickle=False`) after a sha256 check; DTW nearest template (P3 walking skeleton, developer's own signs) | any | `ready` or `unavailable` (with reason) |
 | `onnx` | `model.onnx`, after a sha256 check | any | `ready`, `loading`, or `unavailable` |
 
 **ADR-015, CPU-only MVP:**

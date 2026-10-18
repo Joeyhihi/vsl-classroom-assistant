@@ -37,9 +37,17 @@ Every row in [ARCHITECTURE.md § Failure modes](ARCHITECTURE.md#failure-modes) n
 6. `npm run typecheck`
 7. `npm test` (Vitest)
 8. `npm run build`
-9. `npm run e2e` (Playwright; skip with `--skip-e2e`)
+9. `npm run e2e` (Playwright; starts the mock backend on port 8765 and the preview on 4173; skip with `--skip-e2e`)
+10. `scripts/gen_contracts.py --check` (generated TypeScript matches Pydantic)
 
 CI adds **gitleaks**, installs Playwright Chromium, and runs everything on **Ubuntu and Windows**.
+
+**Phase 3 coverage:**
+- vsl-features: spec/frame validation, normalisation invariance (position, distance), segmentation against synthetic ground truth at 10/15/30 fps, pause tolerance, DTW, decision policy, cooldown.
+- Backend: the session protocol (handshake, every rejection code, dropped frames, rate limit, status throttle, max duration, server mode with a fake extractor); WS transport (origin refusal, mock and template end to end on the replay, heartbeat); template model integrity (sha256 tampering, path traversal, spec mismatch, no pickle); L3 header/JPEG/result conversion with fakes; replay fixture freshness (numeric tolerance across OSes).
+- Frontend: packer, metrics, ladder, recognition reducer, WS client with a fake socket, replay source timing, binary header, RecognitionPanel states with axe.
+- E2E: full stack replay (real backend in mock mode) for segmentation → candidate → confirm (no speech in mock) → uncertain → rejected; metrics; tab-hidden pause; recorder export.
+- **Not covered on the Mac (Windows procedure):** MediaPipe L1/L2 extraction, the worker vs main-thread spike, real L3 extraction, fps and latency on real hardware.
 
 **Phase 2 e2e coverage:** fake-camera preview (mirrored), camera selector and stop; camera denied, unavailable and in use; manual text → transcript → local-voice speech; offline banner with manual text still working; settings voice diagnostics; axe (full WCAG 2.2 AA rules, including colour contrast) on every view in light and dark mode and in the error states; no requests outside localhost.
 

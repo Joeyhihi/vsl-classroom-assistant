@@ -1,9 +1,12 @@
+import type { PredictionMessage, ScoredLabelWire } from "../api/generated/contracts";
 import { CameraPanel } from "../components/camera/CameraPanel";
 import { ManualTextInput } from "../components/compose/ManualTextInput";
+import { RecognitionPanel } from "../components/recognition/RecognitionPanel";
 import { TtsStatus } from "../components/speech/TtsStatus";
 import { TranscriptPanel } from "../components/transcript/TranscriptPanel";
 import type { CameraState } from "../features/camera/useCamera";
 import type { CameraDevice } from "../features/camera/useMediaDevices";
+import type { RecognitionController, SourceKind } from "../features/recognition/useRecognitionSession";
 import type { TranscriptEntry } from "../features/transcript/transcriptStore";
 import type { TtsController } from "../features/tts/useTts";
 
@@ -19,6 +22,10 @@ interface Props {
   onSendMessage: (text: string, speaker: TranscriptEntry["speaker"], speak: boolean) => void;
   onSpeakEntry: (entry: TranscriptEntry) => void;
   onClearTranscript: () => void;
+  recognition: RecognitionController;
+  sourceKind: SourceKind;
+  onConfirmPrediction: (label: ScoredLabelWire, prediction: PredictionMessage) => void;
+  onAcceptL3: () => void;
 }
 
 export function CommunicationView(props: Props) {
@@ -33,6 +40,12 @@ export function CommunicationView(props: Props) {
           onStart={props.onStartCamera}
           onStop={props.onStopCamera}
           onSelectCamera={props.onSelectCamera}
+        />
+        <RecognitionPanel
+          controller={props.recognition}
+          sourceKind={props.sourceKind}
+          onConfirm={props.onConfirmPrediction}
+          onAcceptL3={props.onAcceptL3}
         />
         <ManualTextInput canSpeak={canSpeak} onSubmit={props.onSendMessage} />
         <TtsStatus tts={props.tts} />

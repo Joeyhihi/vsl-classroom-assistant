@@ -29,6 +29,10 @@
 | ~1.5 GB VRAM used by Windows + Chrome | Unverified estimate | P3 [WIN] Task Manager |
 | Piper vi_VN and VieNeu licences | Unverified | Post-MVP only |
 | Local vi-VN voices on macOS and Windows | **macOS recorded (2026-10-18):** macOS 15.8 + Chrome 155 exposes one Vietnamese voice, "Linh" (`vi-VN`, `localService: true`), in headless and headed mode, with no network Vietnamese voices. **Windows: not yet checked.** | Windows: open Settings → Chẩn đoán in the app on the Acer laptop (P2 exit) |
+| Worker spike: MediaPipe tasks-vision 1.0.1 in a module Web Worker (ES-module WASM loader, GPU delegate) | **Unverified**: code written, never executed (no MediaPipe on the Mac) | P3 Windows step 2 |
+| Python `HolisticLandmarker` API and result shape in mediapipe 1.x (L3) | **Unverified**: the adapter accepts both result shapes; tested only with fakes | P3 Windows step 6 |
+| Left/right-hand convention (Holistic and HandLandmarker handedness on unmirrored frames) | **Unverified**: assumptions documented in `packer.ts` | P3 Windows step 3 |
+| Holistic model URL uses `/latest/`, not a fixed version | Mitigated by sha256 pinning on first fetch (trust on first use) | P3 Windows step 1 |
 | Backend RSS in mock mode | **Measured on the M1 (2026-10-18): about 46 MB** for the Python process, plus about 24 MB for the `uv run` wrapper | Re-measure in P3 with the WS endpoint |
 | Vietnamese data-protection applicability | Not reviewed | B2 |
 
@@ -73,3 +77,9 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
 | Which consent wording and VSL video format does the community partner prefer? | Community partner | B2 |
 | Is the Web Worker MediaPipe path stable in Chrome on Windows? | Developer | P3 |
 | Target operating point (precision vs coverage) | Owner | G5 |
+
+## 5. Phase 3 findings (2026-10-18)
+
+- **uvicorn had no WebSocket implementation.** FastAPI's `TestClient` does not need one, so pytest passed while the real server answered the upgrade with 404. The full-stack Playwright test caught it. `websockets` is now an explicit dependency, with a regression test.
+- **Segmenter pre-roll at low fps.** At 10 fps the first moving frames were cut off. Fixed by measuring the pre-roll from the candidate start, with tests at 10/15/30 fps.
+- **L3 fps is the send rate**, not the server's processing rate. If the server falls behind, frames queue on the socket (sends are skipped above 512 KB buffered). Watch prediction latency during the Windows L3 benchmark.

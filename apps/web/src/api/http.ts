@@ -1,3 +1,4 @@
+import type { DiagnosticsResponse, FeatureSpecWire } from "./generated/contracts";
 import { isHealthResponse, type HealthResponse } from "./types";
 
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? "/api/v1";
@@ -36,3 +37,12 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
   }
   return body;
 }
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  if (!response.ok) throw new ApiError("unreachable", `HTTP ${response.status}`);
+  return (await response.json()) as T;
+}
+
+export const fetchFeatureSpec = () => getJson<FeatureSpecWire>("/feature-spec");
+export const fetchDiagnostics = () => getJson<DiagnosticsResponse>("/diagnostics");

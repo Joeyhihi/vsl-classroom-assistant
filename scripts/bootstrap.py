@@ -2,8 +2,8 @@
 
     uv run python scripts/bootstrap.py
 
-Never downloads ML models. `--with-models` (Windows only, Phase 3+) will fetch
-pinned MediaPipe assets; see docs/CROSS_PLATFORM_SETUP.md.
+Never downloads ML models by default. `--with-models` (Windows laptop only)
+fetches the pinned MediaPipe assets; see docs/CROSS_PLATFORM_SETUP.md.
 """
 
 from __future__ import annotations
@@ -36,14 +36,13 @@ def ensure_env_file() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--with-models", action="store_true", help="fetch model assets (P3+)")
+    parser.add_argument("--with-models", action="store_true", help="MediaPipe assets (Windows)")
+    parser.add_argument("--pin", action="store_true", help="record model sha256 (first fetch)")
     parser.add_argument("--skip-web", action="store_true", help="skip npm install")
     args = parser.parse_args()
 
-    if args.with_models:
-        if platform.system() == "Darwin":
-            sys.exit("error: model assets are never downloaded on the Mac (M1 mock-only rule).")
-        sys.exit("error: --with-models is not available until Phase 3.")
+    if args.with_models and platform.system() == "Darwin":
+        sys.exit("error: model assets are never downloaded on the Mac (M1 mock-only rule).")
 
     uv = require_tool("uv", "Install uv: https://docs.astral.sh/uv/")
     ensure_env_file()
@@ -56,6 +55,11 @@ def main() -> int:
         check_node(node)
         has_lock = (WEB_DIR / "package-lock.json").exists()
         if run([npm, "ci" if has_lock else "install"], cwd=WEB_DIR) != 0:
+            return 1
+
+    if args.with_models:  # Windows laptop: MediaPipe assets for L1/L2/L3
+        pin = ["--pin"] if args.pin else []
+        if run([sys.executable, "scripts/fetch_mediapipe_assets.py", *pin]) != 0:
             return 1
 
     print("\nBootstrap complete. Next:")

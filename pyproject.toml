@@ -6,7 +6,7 @@ name = "vsl-classroom-assistant"
 version = "0.1.0"
 description = "Workspace root for VSL Classroom Assistant"
 requires-python = ">=3.12,<3.13"
-dependencies = ["vsl-backend"]
+dependencies = ["vsl-backend", "vsl-features"]
 
 [dependency-groups]
 dev = [
@@ -15,28 +15,30 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
     "psutil>=6",
+    "pillow>=11",  # tests for L3 JPEG decoding
 ]
 
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["services/ai-backend"]
+members = ["services/ai-backend", "packages/vsl-features"]
 
 [tool.uv.sources]
 vsl-backend = { workspace = true }
+vsl-features = { workspace = true }
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["services/ai-backend/src", "services/ai-backend"]
+src = ["services/ai-backend/src", "services/ai-backend", "packages/vsl-features/src"]
 extend-exclude = ["apps/web", "*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["vsl_backend", "tests"]
+known-first-party = ["vsl_backend", "vsl_features", "tests"]
 
 [tool.ruff.lint.per-file-ignores]
 "services/ai-backend/tests/**" = ["S101"]
@@ -45,14 +47,20 @@ known-first-party = ["vsl_backend", "tests"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["services/ai-backend/src", "services/ai-backend/tests", "scripts"]
+files = [
+    "services/ai-backend/src",
+    "services/ai-backend/tests",
+    "packages/vsl-features/src",
+    "packages/vsl-features/tests",
+    "scripts",
+]
 
 [[tool.mypy.overrides]]
-module = ["psutil"]
+module = ["psutil", "mediapipe", "mediapipe.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["services/ai-backend/tests"]
+testpaths = ["services/ai-backend/tests", "packages/vsl-features/tests"]
 addopts = "-q"
 markers = [
     "windows_hw: needs real models/hardware; runs only on the Windows laptop with VSL_RUN_HW_TESTS=1",

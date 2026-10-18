@@ -4,8 +4,9 @@ import { defineConfig } from "vite";
 
 // The backend binds to 127.0.0.1 only; the dev/preview servers proxy /api to it
 // so the browser talks to a single origin (docs/ARCHITECTURE.md).
+const backendPort = process.env.VSL_PORT ?? "8000";
 const backend = {
-  "/api": { target: "http://127.0.0.1:8000", ws: true },
+  "/api": { target: `http://127.0.0.1:${backendPort}`, ws: true },
 };
 
 export default defineConfig({

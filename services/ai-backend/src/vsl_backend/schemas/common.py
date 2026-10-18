@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ErrorCode(StrEnum):
@@ -24,6 +24,8 @@ class ErrorCode(StrEnum):
 
 
 class ErrorBody(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     code: ErrorCode
     message: str
     details: dict[str, Any] = Field(default_factory=dict)
@@ -31,4 +33,6 @@ class ErrorBody(BaseModel):
 
 
 class ErrorResponse(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
     error: ErrorBody

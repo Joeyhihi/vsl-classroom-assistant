@@ -1,11 +1,13 @@
 import { useId, useState } from "react";
 
 import { CameraSelector } from "../components/camera/CameraSelector";
+import { PerformancePanel } from "../components/recognition/PerformancePanel";
 import { BackendStatus } from "../components/system/BackendStatus";
 import type { CameraDevice } from "../features/camera/useMediaDevices";
 import type { BackendHealthState } from "../features/health/useBackendHealth";
 import { SPEECH_RATE_MAX, SPEECH_RATE_MIN, type Settings } from "../features/settings/settingsStore";
 import { partitionVietnameseVoices } from "../features/tts/speechSynthesis";
+import type { RecognitionController } from "../features/recognition/useRecognitionSession";
 import type { TtsController } from "../features/tts/useTts";
 import { vi } from "../i18n/vi";
 
@@ -17,9 +19,19 @@ interface Props {
   tts: TtsController;
   backend: BackendHealthState;
   onDeleteLocalData: () => void;
+  recognition: RecognitionController;
 }
 
-export function SettingsView({ settings, onUpdate, devices, onSelectCamera, tts, backend, onDeleteLocalData }: Props) {
+export function SettingsView({
+  settings,
+  onUpdate,
+  devices,
+  onSelectCamera,
+  tts,
+  backend,
+  onDeleteLocalData,
+  recognition,
+}: Props) {
   const voiceId = useId();
   const rateId = useId();
   const [confirming, setConfirming] = useState(false);
@@ -105,6 +117,12 @@ export function SettingsView({ settings, onUpdate, devices, onSelectCamera, tts,
           </ul>
         )}
       </section>
+
+      <PerformancePanel
+        controller={recognition}
+        level={settings.extractionLevel}
+        onLevelChange={(extractionLevel) => onUpdate({ extractionLevel })}
+      />
 
       <BackendStatus state={backend} />
 

@@ -11,22 +11,20 @@ from vsl_backend.schemas.health import ComponentHealth, HealthComponents, Health
 
 router = APIRouter()
 
-_NOT_YET = {"template": "not implemented until Phase 3", "onnx": "not implemented until Phase 5"}
 
-
-def _sign_model_health(settings: Settings, classifier: Classifier | None) -> ComponentHealth:
+def _sign_model_health(classifier: Classifier | None, error: str | None) -> ComponentHealth:
     if isinstance(classifier, MockClassifier):
         return ComponentHealth(status="mock", detail=f"scripted predictions ({classifier.script})")
     if classifier is None:
-        return ComponentHealth(
-            status="unavailable", detail=_NOT_YET.get(settings.model_mode, "no model loaded")
-        )
+        return ComponentHealth(status="unavailable", detail=error or "no model loaded")
     return ComponentHealth(status="ready", detail=f"model_id={classifier.model_id}")
 
 
-def build_health(settings: Settings, classifier: Classifier | None) -> HealthResponse:
+def build_health(
+    settings: Settings, classifier: Classifier | None, error: str | None = None
+) -> HealthResponse:
     components = HealthComponents(
-        sign_model=_sign_model_health(settings, classifier),
+        sign_model=_sign_model_health(classifier, error),
         stt=(
             ComponentHealth(status="unavailable", detail="not implemented until Phase 7")
             if settings.stt_enabled
@@ -49,4 +47,5 @@ def build_health(settings: Settings, classifier: Classifier | None) -> HealthRes
 
 @router.get("/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
-    return build_health(request.app.state.settings, request.app.state.classifier)
+    state = request.app.state
+    return build_health(state.settings, state.classifier, state.classifier_error)

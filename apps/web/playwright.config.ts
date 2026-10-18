@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4173;
+const BACKEND_PORT = 8765; // separate from a developer backend on 8000
 const isCI = !!process.env.CI;
 
 // Locally we drive the installed Google Chrome (no extra browser download on
@@ -26,11 +27,23 @@ export default defineConfig({
       args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
     },
   },
-  webServer: {
-    // The production build, served by vite preview. /api is mocked per test.
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !isCI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      // Real backend in mock mode (no ML libraries) for the replay end-to-end test.
+      command: `uv run python scripts/run_backend.py --mock --port ${BACKEND_PORT}`,
+      cwd: "../..",
+      url: `http://127.0.0.1:${BACKEND_PORT}/api/v1/health`,
+      env: { VSL_ALLOWED_ORIGINS: `http://localhost:${PORT}`, VSL_ENV: "dev" },
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+    {
+      // Production build in replay mode with the recorder; /api is proxied to the backend.
+      command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}`,
+      env: { VSL_PORT: String(BACKEND_PORT), VITE_LANDMARK_SOURCE: "replay", VITE_ENABLE_RECORDER: "true" },
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+  ],
 });

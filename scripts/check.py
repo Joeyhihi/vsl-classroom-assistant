@@ -34,6 +34,8 @@ def main() -> int:
             ("mypy", [PY, "-m", "mypy"], REPO_ROOT),
             ("pytest", [PY, "-m", "pytest"], REPO_ROOT),
         ]
+    if not args.skip_python and not args.skip_web:
+        steps.append(("contracts", [PY, "scripts/gen_contracts.py", "--check"], REPO_ROOT))
     if not args.skip_web:
         npm = require_tool("npm", "Install Node 24 LTS or pass --skip-web.")
         steps += [

@@ -30,13 +30,16 @@ def test_health_matches_shared_contract_example(client: TestClient) -> None:
     assert client.get("/api/v1/health").json() == example
 
 
-def test_health_degraded_when_model_mode_not_implemented(
+def test_health_degraded_when_template_model_missing(
     client_factory: Callable[..., TestClient],
 ) -> None:
     body = client_factory(model_mode="template").get("/api/v1/health").json()
 
     assert body["status"] == "degraded"
-    assert body["components"]["sign_model"]["status"] == "unavailable"
+    assert body["components"]["sign_model"] == {
+        "status": "unavailable",
+        "detail": "VSL_SIGN_MODEL_ID is not set",
+    }
 
 
 def test_health_reports_stt_unavailable_when_enabled_in_phase_1(
