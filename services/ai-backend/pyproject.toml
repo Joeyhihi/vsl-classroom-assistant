@@ -20,6 +20,8 @@ dependencies = [
 [project.optional-dependencies]
 # L3 server-side landmark extraction (ADR-002). Windows laptop only; never needed on the M1.
 server-extraction = ["mediapipe>=1.1", "pillow>=11"]
+# Phase 5 ONNX sign model (VSL_MODEL_MODE=onnx). Windows only; CPU (ADR-015).
+onnx = ["onnxruntime>=1.20"]
 
 [tool.uv.sources]
 vsl-features = { workspace = true }

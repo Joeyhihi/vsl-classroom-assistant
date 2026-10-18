@@ -94,7 +94,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - A separate bug was fixed: hands were compared without labels, so one hand vanishing while the other appeared looked like fast motion.
   - Tuning uses `scripts/analyze_segmentation.py` on the owner's own recorder takes.
 
-### P4: Data tooling (requires B1 + B2) — current: tools built 2026-10-18 (PR pending review)
+### P4: Data tooling (requires B1 + B2) — tools merged 2026-10-18 (PR #10); Windows live checks pending
 
 - **Owner decision (2026-10-18):** the tools are built *before* B1/B2, and only the developer records themselves. Recording anyone else still requires B1 + B2.
 - **Tasks and status:**
@@ -131,7 +131,22 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - B3 pilot quality report, including inter-annotator agreement.
   - No data inside the repo (guard test passes).
 
-### P5: Dataset + first model (requires B4) **[WIN]**
+### P5: Dataset + first model (requires B4) **[WIN]** — current: pipeline built 2026-10-18 (prototype mode, PR pending review)
+
+- **Owner decision (2026-10-18): fast prototype.** The pipeline is built and run on the developer's own recordings now. B4 data is still needed for G5. Details: [AI_ML_STRATEGY.md §2b](AI_ML_STRATEGY.md#2b-phase-5-implementation-as-built-prototype-mode).
+- **Status:**
+
+  | Deliverable | Status |
+  |---|---|
+  | Signer-grouped splits + leakage check | Done (falls back to session / sample for one signer, labelled) |
+  | Template vs GRU vs TCN report | Done (`train_sign_model.py`, report in `DATA_ROOT/reports/models/`) |
+  | Calibration | Done (temperature + operating point on validation) |
+  | ONNX export, model card, sha256 | Done (parity check + backend reload) |
+  | Registry checks, `VSL_MODEL_MODE=onnx` | Done |
+  | ML smoke job in CI (synthetic) | Done (`ml-smoke`); **first run pending** (needs a push) |
+  | First model on own data + live test | **Pending on Windows** |
+  | G5 on ≥3 held-out signers | Blocked on B4 |
+
 - **Deliverables:**
   - signer-grouped splits;
   - template vs GRU vs TCN report;

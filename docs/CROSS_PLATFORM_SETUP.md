@@ -45,6 +45,7 @@ Camera + MediaPipe and any real model run **only on Windows**. Close unused IDE 
 ```powershell
 uv run python scripts/bootstrap.py --with-models      # fetch pinned MediaPipe assets (sha256-checked)
 uv sync --extra server-extraction                     # optional L3 server-side MediaPipe
+uv run --extra train python scripts/train_sign_model.py --model-id vsl-01   # P5 (§8c)
 ```
 
 ## 3. Git and GitHub workflow
@@ -151,6 +152,29 @@ Run recognition at L2 for about 5 minutes. **Between signs, leave your hands res
 6. Delete: `uv run python scripts/delete_recordings.py --session <id>`, which is a dry run; add `--yes` to delete.
 
 To rename the placeholder signs, edit `ml/vocabulary/vocabulary.dev.json` (`text_vi`). Keep the `DEV_xx` IDs, or re-record.
+
+## 8c. Phase 5 workflow: train → report → run the model live (Windows) {#phase-5-workflow}
+
+Prototype mode: the data is your own recordings (`DEV-01`), so the numbers are a pipeline check, not a G5 result (that needs ≥3 held-out signers, B4).
+
+1. Record and review (§8b). For a first model, aim for **every sign ≥10 accepted takes**, plus `DST_01` (other signs, ≥10) and the rest/hold items (≥5 each). Record on **two or more days** if you can: three sessions or more give a session-level split, which is more honest than mixing takes.
+2. Train and compare (template DTW, GRU, TCN), about a few minutes on CPU:
+
+   ```powershell
+   uv run --extra train python scripts/train_sign_model.py --model-id vsl-01
+   ```
+
+   The first run downloads CPU torch and onnxruntime (a few hundred MB). The script prints the split level and each model's test macro-F1, FAR and coverage. It exports the best model to `model-artifacts/sign/vsl-01/` and checks ONNX parity, then reloads it through the backend loader. The report goes to `DATA_ROOT/reports/models/vsl-01-<time>.md`.
+3. Run it live. In `.env` set `VSL_MODEL_MODE=onnx` (or `template` if the template won) and `VSL_SIGN_MODEL_ID=vsl-01`, then:
+
+   ```powershell
+   uv run --extra train python scripts/run_backend.py    # terminal 1 (keeps onnxruntime installed)
+   uv run python scripts/run_web.py                      # terminal 2
+   ```
+
+4. Tuning: `--select gru|tcn|template` exports a specific model, `--max-far 0.1` relaxes the operating point (default 5 %), `--epochs`, `--seed`. If the report says "target not met", record more takes before relaxing anything.
+
+Never train while the demo is running, and never on the Mac.
 
 ## 9. End-to-end tests (Playwright)
 

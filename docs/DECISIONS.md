@@ -154,6 +154,16 @@ Status values: **Accepted**, **Provisional** (needs measurement or validation), 
 - **Revisit when:** multiple reviewers (inter-annotator agreement), much larger datasets, or B2 approval adds consent-register integration.
 - **Provisional:** the backend-ingest choice and the dev vocabulary were taken while the owner was away (see the ROADMAP P4 notes).
 
+## ADR-018: Phase 5 pipeline in prototype mode — Accepted (provisional until G5)
+- **Context:** the owner wants a fast prototype. B4 (≥12 consented signers) is months away, but the training, calibration, export and serving code can be built and exercised now on the developer's own data.
+- **Decision:**
+  - One script (`train_sign_model.py`) compares the template, GRU and TCN models on the strongest grouped split the data allows (signer → session → sample). It labels anything weaker than a signer split as prototype numbers.
+  - Unknown rejection uses trained `__background__` / `__distractor__` classes plus a calibrated operating point that caps FAR and the confident-wrong rate (default 5 %).
+  - Normalisation lives inside the ONNX graph. Serving is onnxruntime on CPU (2 threads), loaded only in `onnx` mode.
+  - torch, onnx and onnxruntime are a root `train` extra with CPU wheels from the PyTorch CPU index (pinned `<2.9` for the TorchScript exporter). They are never installed on the M1.
+- **Trade-offs:** one-signer numbers overstate accuracy for new signers. The `<2.9` pin needs revisiting when the TorchScript exporter is removed. Mirroring augmentation waits for `mirroring_ok` from B1.
+- **Revisit when:** B4 data arrives (G5), or a torch upgrade is needed.
+
 ## ADR-016: Separate start scripts and dev-only mock model mode — Accepted
 - **Context:** the M1 cannot comfortably run the browser, MediaPipe, the IDE, the Vite dev server, and models together. The owner requires separate start scripts. A combined launcher uses the same memory, but it prevents running only one side.
 - **Decision:**
