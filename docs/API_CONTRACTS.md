@@ -7,7 +7,7 @@
 - **Naming:** `snake_case` on the wire **and** in the TypeScript types. There is no case-conversion layer.
 - **Units:** time is always in **milliseconds** (`*_ms`). Scores are calibrated probabilities in [0, 1].
 - **Text:** Vietnamese text is normalised to Unicode NFC.
-- **Single source of truth:** Pydantic models in `services/ai-backend/src/vsl_backend/schemas/`. From P3, `scripts/gen_contracts.py` generates JSON Schema and then `apps/web/src/api/generated/contracts.d.ts`, and CI fails if the generated file is out of date. In P1 the only type, health, is written by hand in `apps/web/src/api/types.ts` and kept in sync by a contract test.
+- **Single source of truth:** Pydantic models in `services/ai-backend/src/vsl_backend/schemas/`. `scripts/gen_contracts.py` turns them into JSON Schema and then `apps/web/src/api/generated/contracts.ts` (via `json-schema-to-typescript`). `scripts/check.py` and CI fail if the generated file is out of date. `apps/web/src/api/types.ts` keeps only a runtime guard for health, checked against the shared example by both test suites.
 - **Sync vs async:**
   - Health, vocabulary, models, and feedback are fast handlers that block nothing.
   - ONNX inference runs inline if it takes under 10 ms (measured), otherwise in a threadpool.
@@ -41,8 +41,10 @@ The frontend maps each `code` to a Vietnamese message in `apps/web/src/i18n/vi.t
 | Method | Path | Phase | Request | Response |
 |---|---|---|---|---|
 | GET | `/api/v1/health` | **P1** | — | `HealthResponse` |
-| GET | `/api/v1/vocabulary` | P3 | — | `VocabularyResponse`. The internal `__background__` and `__distractor__` classes are excluded. |
-| GET | `/api/v1/models` | P3 | — | `ModelInfo` (summary of the active model card) |
+| GET | `/api/v1/vocabulary` | P3 | — | `VocabularyResponse` `{vocabulary_version, entries:[{gloss_id, text_vi, icon}]}`. Internal `__*__` classes are excluded. 503 `MODEL_UNAVAILABLE` without a model. |
+| GET | `/api/v1/models` | P3 | — | `ModelInfo` `{model_id, kind: mock\|template-dtw\|onnx, vocabulary_version, feature_spec_version, developer_only}`. When `developer_only` is true the UI shows a badge. |
+| GET | `/api/v1/feature-spec` | P3 | — | `FeatureSpecWire`, the same object as in `session.started`. Used by the recorder, which has no WS session. |
+| GET | `/api/v1/diagnostics` | P3 | — | `{rss_mb, python_version, platform, model, server_extraction:{available, reason}}` for the performance panel. |
 | POST | `/api/v1/feedback` | P6 | `FeedbackCreate` | 201 `{feedback_id}` |
 | DELETE | `/api/v1/feedback` | P6 | — | 204 (deletes all local feedback) |
 | POST | `/api/v1/stt/transcriptions` | P7 (gated) | multipart: `audio` (WAV, 16 kHz mono, ≤30 s, ≤2 MB), `language=vi` | `TranscriptionResponse` |
@@ -95,7 +97,7 @@ Example (P1, mock mode):
 ```
 
 P1 rules:
-- `template` and `onnx` modes are not implemented until P3/P5. In P1, `sign_model` reports `unavailable` in those modes and overall `status` is `degraded`.
+- `template` mode loads `model-artifacts/sign/<VSL_SIGN_MODEL_ID>/` (P3). If it can't, `sign_model` is `unavailable` with the reason as `detail` (for example `"VSL_SIGN_MODEL_ID is not set"`, `"sha256 mismatch for 'labels.json'"`), and the app runs in manual-only mode. `onnx` stays unavailable until P5.
 - `mock` with `environment != dev` is refused at startup, not reported.
 
 ### Vocabulary (P3)
@@ -183,7 +185,7 @@ class TranscriptionResponse(BaseModel):
                     "shapes": { "pose": [33, 4], "hand": [21, 3], "face": [40, 3] } },
   "limits": { "max_fps": 30, "max_batch": 8, "max_session_s": 7200 } }
 
-{ "type": "status", "state": "signing",     // waiting_for_hands | ready | signing | processing | paused
+{ "type": "status", "state": "signing",     // waiting_for_hands | ready | signing  ("paused" is client-side only)
   "hands_visible": true, "pose_visible": true, "dropped_frames": 0 }   // sent on change, ≤4/s
 
 { "type": "prediction", "prediction_id": "p_0012", "model_id": "gru-2027-01-v1",
@@ -207,7 +209,13 @@ class TranscriptionResponse(BaseModel):
 | `uncertain` | Above the rejection floor but fails τ or margin | Top-3 alternatives plus Dismiss |
 | `rejected` | Rejection class wins, or score < floor | "Không nhận ra" (not recognised). `top` is sent but hidden in the UI. |
 
-**Close codes:** 1000 normal · 1008 origin/policy · 1009 message too big · 1011 internal · 4001 protocol mismatch · 4002 feature spec mismatch · 4003 rate limited · 4004 heartbeat timeout · 4005 extraction unavailable.
+**Close codes:** 1000 normal · 1008 origin/policy · 1009 message too big · 1011 internal · 4001 protocol mismatch · 4002 feature spec mismatch · 4003 rate limited · 4004 heartbeat timeout · 4005 extraction unavailable · **4006 model unavailable** (added in P3). The client does not reconnect after 1000, 1008, 1009, 4001, 4002, 4005 or 4006; for other codes it retries with backoff (1, 2, 4, 8 s, at most 5 attempts).
+
+**Implementation notes (P3):**
+- A fatal `error` message always comes before the close, and the UI shows the specific code.
+- `status` is sent only when (state, hands_visible, pose_visible) changes, at most every 250 ms.
+- Rate limit: more than `max_fps + max_batch` frames in any 1 s window closes the session with 4003.
+- The same gloss repeated within `VSL_COOLDOWN_MS` (default 1500) is suppressed. Rejected predictions are always sent.
 
 ## Transcript entry (browser domain type)
 

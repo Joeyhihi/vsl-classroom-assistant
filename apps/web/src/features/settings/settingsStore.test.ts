@@ -11,13 +11,29 @@ describe("parseSettings", () => {
 
   it("keeps valid fields and clamps the speech rate", () => {
     const parsed = parseSettings(
-      JSON.stringify({ preferredCameraId: "cam", voiceURI: "Linh", allowNetworkVoices: true, speechRate: 9 }),
+      JSON.stringify({
+        preferredCameraId: "cam",
+        voiceURI: "Linh",
+        allowNetworkVoices: true,
+        speechRate: 9,
+        extractionLevel: "L2",
+      }),
     );
-    expect(parsed).toEqual({ preferredCameraId: "cam", voiceURI: "Linh", allowNetworkVoices: true, speechRate: 2 });
+    expect(parsed).toEqual({
+      preferredCameraId: "cam",
+      voiceURI: "Linh",
+      allowNetworkVoices: true,
+      speechRate: 2,
+      extractionLevel: "L2",
+    });
   });
 
   it("never enables network voices from a non-boolean value", () => {
     expect(parseSettings(JSON.stringify({ allowNetworkVoices: "yes" })).allowNetworkVoices).toBe(false);
+  });
+
+  it("rejects unknown extraction levels", () => {
+    expect(parseSettings(JSON.stringify({ extractionLevel: "L9" })).extractionLevel).toBe("L1");
   });
 
   it("drops wrongly typed and unknown fields", () => {

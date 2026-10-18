@@ -40,6 +40,7 @@ Status values: **Accepted**, **Provisional** (needs measurement or validation), 
   - It may produce slightly different landmarks than the browser extractor. A parity test is required, and `extractor_backend` is recorded.
   - Motion blur is a camera-exposure problem that no level fixes.
 - **Revisit when:** P3 measurements are in. If L3 fails too, the machine is manual-only.
+- **P3 implementation:** `ladder.ts` (decision logic), `extractor.ts` (worker first, main-thread fallback), `sources.ts` (Replay / Camera / Server), `server_extractor.py` (L3, optional extra, lazy import). L3 frames use a 16-byte little-endian header (`t_ms` u64, width u16, height u16, 4 reserved) followed by the JPEG. Pending Windows measurements.
 
 ## ADR-003: REST + one WebSocket — Accepted
 - **Decision:**
@@ -95,6 +96,7 @@ Status values: **Accepted**, **Provisional** (needs measurement or validation), 
   - `packages/vsl-features` (NumPy only) is used by both the backend and `ml/`.
   - The server sends the `feature_spec` to the client in `session.started`, so the browser packer never hard-codes landmark indices.
 - **Trade-offs:** adds one workspace package.
+- **P3:** the recorder, which has no WS session, gets the same spec from `GET /api/v1/feature-spec`.
 
 ## ADR-010: TTS uses local browser voices only in the MVP — Accepted
 - **Decision:**

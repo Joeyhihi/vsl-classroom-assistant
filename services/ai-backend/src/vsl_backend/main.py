@@ -37,8 +37,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
         openapi_url="/api/openapi.json" if settings.env == "dev" else None,
     )
+    load = build_classifier(settings)
     app.state.settings = settings
-    app.state.classifier = build_classifier(settings)
+    app.state.classifier = load.classifier
+    app.state.classifier_error = load.error
 
     install_error_handlers(app)
     install_security_middleware(app, settings)

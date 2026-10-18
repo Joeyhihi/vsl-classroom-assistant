@@ -9,10 +9,20 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
+    "websockets>=13",  # uvicorn needs a WebSocket implementation for /recognition/ws
     "pydantic>=2.8",
     "pydantic-settings>=2.4",
     "platformdirs>=4.2",
+    "psutil>=6",  # process RSS for diagnostics; RAM guard in P6
+    "vsl-features",
 ]
+
+[project.optional-dependencies]
+# L3 server-side landmark extraction (ADR-002). Windows laptop only; never needed on the M1.
+server-extraction = ["mediapipe>=1.1", "pillow>=11"]
+
+[tool.uv.sources]
+vsl-features = { workspace = true }
 
 [build-system]
 requires = ["uv_build>=0.8,<0.13"]

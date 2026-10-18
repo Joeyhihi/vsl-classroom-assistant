@@ -43,7 +43,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   6. Python wheel availability is recorded (done 2026-10-18; this led to the move to Python 3.12) for fastapi, numpy, onnxruntime, mediapipe, and faster-whisper on `macosx_arm64` and `win_amd64`. This means *checking PyPI*, not installing.
 - **Test plan:** pytest (health, config, security, errors, mock classifier); Vitest (app shell, a11y); a contract test for the health example.
 
-### P2: Frontend skeleton (current: built, awaiting owner review)
+### P2: Frontend skeleton ✅ (merged; Windows voice check and CI passed 2026-10-18)
 - **Deliverables:**
   - permission flows: denied, unavailable, in use;
   - mirrored preview and camera selector;
@@ -56,7 +56,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - E2E tests pass with the backend both up and down.
 - **Risk:** no local Vietnamese voice on Windows. The fallback is text plus the large display; backend TTS stays out of the MVP.
 
-### P3: Walking skeleton (the smallest end-to-end prototype)
+### P3: Walking skeleton (the smallest end-to-end prototype) — current: built on the Mac, Windows measurements pending
 - **Deliverables:**
   - `packages/vsl-features` (spec, normalise, buffer, segmenter, decoding);
   - WS endpoint with the `feature_spec` handshake; `ReplayLandmarkSource`;
@@ -65,6 +65,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - minimal landmarks-only recorder;
   - `TemplateClassifier` trained on 3–5 of the developer's own signs **[WIN]**, kept local and **never committed or used for the real model**;
   - L3 spike: `ServerLandmarkExtractor`, binary JPEG frames, parity report **[WIN]**.
+- **Status (2026-10-18):** everything that can run without a camera or model is built and tested on the Mac: vsl-features, WS + handshake, segmenter, template classifier (tested on synthetic data), contracts generation, replay e2e (full stack, mock backend), recorder, metrics, ladder logic, L3 server extractor (tested with fakes). The MediaPipe extractors (L1/L2, worker spike) and the real L3 extractor are written but **have never executed**; that is the Windows step in [CROSS_PLATFORM_SETUP.md §11](CROSS_PLATFORM_SETUP.md#phase-3-windows-test-procedure).
 - **Exit criteria:**
   - Replay E2E passes in CI.
   - Measured on Windows at each ladder level: **≥15 fps** and **≤1.0 s p95** from rest to rendered.

@@ -321,3 +321,46 @@ textarea { width: 100%; resize: vertical; }
 .privacy-list li { margin-bottom: var(--space-1); }
 
 .tts-status:empty { display: none; }
+
+/* --- Phase 3 --- */
+input:not([type]),
+input[type="text"] {
+  font: inherit;
+  padding: var(--space-1);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.recognition__header h2 { margin: 0; }
+
+.badge--replay { background: var(--color-info); color: var(--color-bg); }
+.badge--dev { background: var(--color-warning); color: var(--color-bg); }
+
+.overlay {
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+  margin: var(--space-1) 0;
+  border-radius: var(--radius);
+  transform: scaleX(-1); /* mirrored like the preview */
+}
+
+.prediction__card {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius);
+}
+
+.prediction__card--uncertain { border-color: var(--color-warning); }
+
+.prediction__text {
+  margin: 0;
+  font-size: var(--size-prediction);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.skipped { margin-top: var(--space-2); color: var(--color-muted); }

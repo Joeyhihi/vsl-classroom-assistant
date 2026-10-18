@@ -1,27 +1,10 @@
-// Hand-written mirror of services/ai-backend/src/vsl_backend/schemas/health.py.
-// Replaced by generated contracts in Phase 3 (docs/API_CONTRACTS.md).
-// Kept honest by src/api/types.test.ts, which validates the shared example
+// Runtime guard for the health response. Types come from the generated contracts
+// (scripts/gen_contracts.py); src/api/types.test.ts validates the shared example
 // services/ai-backend/tests/contract_examples/health.mock.json.
 
-export type ComponentStatus = "ready" | "loading" | "unavailable" | "disabled" | "mock";
+import type { ComponentHealth, HealthResponse } from "./generated/contracts";
 
-export interface ComponentHealth {
-  status: ComponentStatus;
-  detail: string | null;
-}
-
-export interface HealthResponse {
-  status: "ok" | "degraded";
-  version: string;
-  api_version: "v1";
-  environment: "dev" | "prod";
-  model_mode: "mock" | "template" | "onnx";
-  components: {
-    sign_model: ComponentHealth;
-    stt: ComponentHealth;
-    tts: ComponentHealth;
-  };
-}
+export type { ComponentHealth, HealthResponse };
 
 const COMPONENT_STATUSES: readonly string[] = ["ready", "loading", "unavailable", "disabled", "mock"];
 

@@ -37,6 +37,24 @@ export function createManualEntry(
   };
 }
 
+/** A confirmed sign prediction (never added without the user's confirmation). */
+export function createSignEntry(
+  label: { gloss_id: string; text_vi: string; score: number },
+  now: Date = new Date(),
+): TranscriptEntry {
+  return {
+    id: crypto.randomUUID(),
+    created_at: now.toISOString(),
+    source: "sign",
+    speaker: "student",
+    text: normalizeMessage(label.text_vi),
+    gloss_id: label.gloss_id,
+    confidence: label.score,
+    confirmed: true,
+    spoken: false,
+  };
+}
+
 type Action =
   | { type: "add"; entry: TranscriptEntry }
   | { type: "mark_spoken"; id: string }

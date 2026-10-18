@@ -88,6 +88,8 @@ uv sync --extra server-extraction                     # optional L3 server-side 
 | `VSL_HEAVY_MODEL_IDLE_UNLOAD_S` | `300` | ResourceManager |
 | `VSL_MIN_FREE_RAM_MB` / `VSL_MIN_FREE_VRAM_MB` | `1500` / `1500` | Guards (to re-tune after P3 and P7) |
 | `VSL_MAX_SESSION_S` | `7200` | WS session cap |
+| `VSL_HOLISTIC_MODEL_PATH` | `apps/web/public/mediapipe/holistic_landmarker.task` | Model for L3 server extraction |
+| `VSL_COOLDOWN_MS` | `1500` | Duplicate-prediction suppression window |
 | `VSL_LOG_LEVEL` | `INFO` | Logging |
 | `VITE_API_BASE` | `/api/v1` | Proxied to the backend by Vite in dev |
 | `VITE_LANDMARK_SOURCE` | `replay` | `camera` or `replay`. Must be `camera` on Windows for real tests. |
@@ -139,3 +141,25 @@ The existing `.gitignore` plus the P1 additions exclude:
 | Vite fails on Windows with a missing `@rollup/rollup-win32-*` | See the npm risk above: delete `node_modules`, run `npm ci`, and regenerate the lockfile if needed |
 | Backend refuses to start: "mock mode requires VSL_ENV=dev" | Set `VSL_ENV=dev` or choose another `VSL_MODEL_MODE` |
 | CRLF line-ending warnings | `.gitattributes` normalises them. Run `git add --renormalize .` once if needed. |
+
+## 11. Phase 3 Windows test procedure {#phase-3-windows-test-procedure}
+
+Everything below runs **only on the Windows laptop**. Steps 1–3 are setup; steps 4–7 produce the P3 exit measurements. Record results in the PR, using numbers only and no recordings.
+
+1. **Assets (first time).** Run `uv run python scripts/bootstrap.py --with-models --pin`. This copies the tasks-vision WASM runtime and downloads the Holistic, Hand and Pose models into `apps/web/public/mediapipe/` (gitignored). On the first run it records their sha256 in `scripts/mediapipe_assets.json`. **Commit that file**; later runs (without `--pin`) verify against it.
+2. **Camera mode.** In `.env`, set `VITE_LANDMARK_SOURCE=camera` and keep `VSL_MODEL_MODE=mock`. Start the backend and frontend, turn on the camera, and press "Bắt đầu nhận dạng" (start recognition).
+   - Check: the landmark overlay follows you, and Settings → Hiệu năng (performance) shows the source detail (e.g. `L1 worker/GPU`). This is the **worker spike result**: `worker` means MediaPipe runs in the Web Worker; `main` means it fell back to the main thread.
+3. **Handedness calibration.** Raise only your **right** hand. In the overlay, the right hand is drawn in **orange** and the left in green. If the colours are swapped, the left/right convention is inverted: report it, and the packer flag gets flipped (`packer.ts`, `server_extractor.py`).
+4. **L1 benchmark.** Run recognition for 5 minutes using the production build (`run_web.py --preview`). Record fps, latency p50/p95, JS heap, backend RSS, and GPU memory from Task Manager. Targets: **≥15 fps** and **≤1000 ms p95**.
+5. **L2 benchmark.** Settings → Mức xử lý hình ảnh (processing level) → L2, then repeat step 4.
+6. **L3 benchmark.** Run `uv sync --extra server-extraction` and set `VSL_SERVER_EXTRACTION_ENABLED=true`. Restart the backend, choose L3, and repeat step 4. (For L3, the fps shown is the rate frames are sent; check that predictions keep up.) If the backend reports `EXTRACTION_UNAVAILABLE`, `/api/v1/diagnostics` gives the reason. The Python HolisticLandmarker API is **unverified**, so report any import or attribute error verbatim.
+7. **Template classifier on your own signs.**
+   1. Set `VITE_ENABLE_RECORDER=true`.
+   2. In Ghi mẫu (recorder), record 3–5 of **your own** signs, 3+ takes each, and download the files. Keep them outside the repo.
+   3. Run `uv run python scripts/build_templates.py --model-id dev-01 path\to\recording-*.json`.
+   4. Set `VSL_MODEL_MODE=template` and `VSL_SIGN_MODEL_ID=dev-01`, then restart.
+   5. Sign each one a few times and note how often it's correct, how often it's "uncertain", and what happens when you sign something not in the set.
+
+   This checks the pipeline only. It is not a model.
+
+If no level reaches 15 fps, the laptop is documented as manual-text-only and the owner decides whether to continue (ROADMAP P3).

@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 
+import { isExtractionLevel, type ExtractionLevel } from "../metrics/ladder";
+
 // Per-browser preferences only (docs/SECURITY_AND_PRIVACY.md §1). Never
 // transcript text or anything about other people.
 export interface Settings {
@@ -8,6 +10,8 @@ export interface Settings {
   /** Network voices send text to a cloud service; off by default (ADR-010). */
   allowNetworkVoices: boolean;
   speechRate: number;
+  /** ADR-002 ladder level remembered per machine. */
+  extractionLevel: ExtractionLevel;
 }
 
 export const SETTINGS_KEY = "vsl.settings.v1";
@@ -17,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   voiceURI: null,
   allowNetworkVoices: false,
   speechRate: 1,
+  extractionLevel: "L1",
 };
 
 export const SPEECH_RATE_MIN = 0.5;
@@ -41,6 +46,7 @@ export function parseSettings(raw: string | null): Settings {
     voiceURI: nullableString(d.voiceURI),
     allowNetworkVoices: d.allowNetworkVoices === true,
     speechRate: Math.min(SPEECH_RATE_MAX, Math.max(SPEECH_RATE_MIN, rate)),
+    extractionLevel: isExtractionLevel(d.extractionLevel) ? d.extractionLevel : "L1",
   };
 }
 

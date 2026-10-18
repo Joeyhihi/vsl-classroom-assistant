@@ -4,13 +4,14 @@ export const vi = {
   appTitle: "Trợ lý lớp học VSL",
   appTagline: "Nhận dạng một danh sách nhỏ ký hiệu VSL — không phải phiên dịch.",
   phaseNotice:
-    "Phiên bản Giai đoạn 2: camera, nhập chữ và đọc thành tiếng. Chưa có nhận dạng ký hiệu.",
+    "Phiên bản Giai đoạn 3 (khung thử nghiệm): nhận dạng chỉ dùng mô hình mô phỏng hoặc mẫu thử của nhà phát triển — chưa có từ vựng VSL thật.",
 
   nav: {
     label: "Điều hướng chính",
     communicate: "Giao tiếp",
     settings: "Cài đặt",
     privacy: "Quyền riêng tư",
+    record: "Ghi mẫu",
   },
 
   backend: {
@@ -143,6 +144,90 @@ export const vi = {
       "Cài đặt (camera, giọng đọc) lưu trong trình duyệt và có thể xoá trong Cài đặt → Xoá dữ liệu cục bộ.",
       "Phiên bản thử nghiệm chỉ dành cho người lớn tham gia có đồng ý.",
     ],
+  },
+
+  recognition: {
+    heading: "Nhận dạng ký hiệu",
+    start: "Bắt đầu nhận dạng",
+    stop: "Dừng nhận dạng",
+    resume: "Tiếp tục",
+    idleHint: "Ký một ký hiệu, rồi hạ tay xuống để hệ thống nhận dạng.",
+    state: {
+      connecting: "Đang kết nối…",
+      waiting_for_hands: "Đưa tay vào khung hình",
+      ready: "Sẵn sàng — hãy ký",
+      signing: "Đang ký…",
+      paused: "Tạm dừng vì tab bị ẩn",
+      reconnecting: (n: number) => `Mất kết nối, đang thử lại (lần ${n})…`,
+    },
+    failure: {
+      NO_CAMERA: "Hãy bật camera trước khi nhận dạng.",
+      REPLAY_UNAVAILABLE: "Không tải được dữ liệu phát lại.",
+      EXTRACTOR_FAILED:
+        "Không khởi động được bộ nhận dạng điểm mốc (MediaPipe). Trên Windows, hãy chạy bootstrap.py --with-models.",
+      BACKEND_UNREACHABLE: "Không kết nối được máy chủ sau nhiều lần thử.",
+    } as Record<string, string>,
+    failureGeneric: "Nhận dạng đã dừng do lỗi.",
+    replayBadge: "PHÁT LẠI TỔNG HỢP",
+    replayNotice:
+      "Đang dùng dữ liệu phát lại tổng hợp — không phải camera và không phải ký hiệu VSL thật.",
+    devModelBadge: "MÔ HÌNH THỬ NGHIỆM",
+    overlayLabel: "Khung xương điểm mốc của khung hình mới nhất",
+  },
+  candidate: {
+    confirm: "Xác nhận",
+    dismiss: "Bỏ qua",
+    uncertainPrompt: "Bạn muốn nói gì?",
+    choose: (text: string) => `Chọn “${text}”`,
+    rejected: "Không nhận ra — hãy ký lại",
+    skippedHeading: "Đã bỏ qua",
+    mockNoSpeech: "Chế độ mô phỏng: kết quả kịch bản không được đọc thành tiếng.",
+    confidence: (p: number) => `Độ tin cậy ${Math.round(p * 100)}%`,
+  },
+  ladder: {
+    autoSwitch: (fps: number) =>
+      `Tốc độ xử lý thấp (${fps.toFixed(1)} khung/giây). Lần bắt đầu tới sẽ dùng chế độ nhẹ hơn (L2).`,
+    offerL3: (fps: number) =>
+      `Vẫn chậm (${fps.toFixed(1)} khung/giây). Có thể xử lý hình ảnh trên máy chủ cục bộ (127.0.0.1); hình ảnh không rời khỏi máy này và không được lưu.`,
+    acceptL3: "Dùng xử lý trên máy chủ cục bộ (L3)",
+    unsupported: "Máy này chưa đủ nhanh để nhận dạng ký hiệu. Hãy dùng nhập chữ.",
+  },
+  performance: {
+    heading: "Hiệu năng (đo trên máy thật)",
+    levelHeading: "Mức xử lý hình ảnh",
+    levels: {
+      L1: "L1 — Toàn thân trong trình duyệt (mặc định)",
+      L2: "L2 — Tay và tư thế, nhẹ hơn (không có khuôn mặt)",
+      L3: "L3 — Xử lý trên máy chủ cục bộ",
+    },
+    levelHint: "Thay đổi có hiệu lực từ lần bắt đầu nhận dạng tiếp theo.",
+    fps: "Tốc độ điểm mốc",
+    latency: "Độ trễ hạ tay → hiển thị (p50 / p95)",
+    inference: "Thời gian suy luận",
+    source: "Nguồn / chế độ",
+    dropped: "Khung hình bị loại",
+    heap: "Bộ nhớ JavaScript",
+    backendRss: "Bộ nhớ máy chủ",
+    refresh: "Làm mới",
+    none: "—",
+    notRunning: "Bắt đầu nhận dạng để đo.",
+  },
+  recorder: {
+    heading: "Ghi mẫu ký hiệu (chỉ dữ liệu của chính bạn)",
+    warning:
+      "Chỉ ghi ký hiệu của chính bạn. Chỉ lưu điểm mốc (không có hình ảnh), giữ trong trình duyệt cho tới khi bạn tải tệp xuống.",
+    glossLabel: "Mã ký hiệu (ví dụ DEV_01)",
+    textLabel: "Chữ hiển thị",
+    iconLabel: "Biểu tượng (từ khoá)",
+    record: "Ghi một lượt (3 giây)",
+    countdown: (n: number) => `Chuẩn bị… ${n}`,
+    recording: "ĐANG GHI",
+    takes: (n: number) => `Đã ghi ${n} lượt`,
+    download: "Tải tệp ghi (.json)",
+    clear: "Xoá các lượt",
+    sourceFailed: "Không bắt đầu được nguồn điểm mốc.",
+    needCamera: "Hãy bật camera ở trang Giao tiếp trước.",
+    needLabel: "Nhập mã ký hiệu và chữ hiển thị trước khi ghi.",
   },
 
   errorBoundary: {
