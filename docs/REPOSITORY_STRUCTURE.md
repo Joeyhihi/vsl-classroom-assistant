@@ -95,14 +95,16 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | Path | Responsibility | Phase |
 |---|---|---|
 | `src/main.tsx`, `App.tsx` | Entry point; view state (communicate, settings, privacy, guide, record) with no router | P1 shell, P2 |
+| `src/app/ErrorBoundary.tsx` | Catches render errors and shows a reload screen (logs the component stack only) | P2 |
 | `src/views/` | `CommunicationView`, `SettingsView`, `PrivacyView` (P2); `RecorderView` (P3 minimal, P4 full); `SignGuideView`, `LargeDisplayView` (P6) | P2+ |
-| `src/components/` | `camera/`, `recognition/`, `transcript/`, `compose/`, `speech/`, `system/` (banners, live region), `ui/` (Button, Dialog, Toggle, Badge) | P2+ |
+| `src/components/` | `camera/` (CameraPanel, CameraPreview, CameraSelector), `transcript/` (TranscriptPanel), `compose/` (ManualTextInput), `speech/` (TtsStatus), `system/` (ConnectionBanner, BackendStatus), `ui/` (StatusLine) in P2; `recognition/` from P3 | P2+ |
 | `src/features/` | Hooks and logic: `health/` (P1, backend status polling), `camera/`, `landmarks/`, `recognition/`, `transcript/`, `tts/`, `settings/`, `recorder/` (P3), `stt/` (P7) | P2+ |
 | `src/api/` | `http.ts` (P1), `ws.ts` (P3), `types.ts` (hand-written P1 health type), `generated/contracts.d.ts` (P3) | P1+ |
 | `src/i18n/vi.ts` | All UI strings and error-code messages, in Vietnamese | P1 |
 | `src/styles/` | `tokens.css` (colours, sizes, focus ring), `global.css` | P1 |
 | `src/test/` | Vitest setup and synthetic fixtures | P1 |
-| `e2e/` | Playwright: permission denied, manual text, replay recognition, no-egress | P2–P3 |
+| `e2e/` | Playwright: fake camera, permission flows, manual text and speech, offline banner, axe, no-egress (P2); replay recognition (P3). `helpers.ts` mocks health and stubs speech. | P2–P3 |
+| `playwright.config.ts` | Builds and serves the production app; local runs use installed Chrome, CI uses Playwright Chromium | P2 |
 | `public/mediapipe/` | Self-hosted MediaPipe assets (gitignored) | P3 |
 
 ### `services/ai-backend/`

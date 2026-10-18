@@ -1,6 +1,6 @@
 """Run every local quality gate (same as CI, minus gitleaks).
 
-    uv run python scripts/check.py [--skip-web] [--skip-python]
+    uv run python scripts/check.py [--skip-web] [--skip-python] [--skip-e2e]
 
 Needs no webcam, GPU or ML model (docs/TESTING_STRATEGY.md).
 """
@@ -21,6 +21,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-web", action="store_true")
     parser.add_argument("--skip-python", action="store_true")
+    parser.add_argument("--skip-e2e", action="store_true", help="skip Playwright (needs Chrome)")
     args = parser.parse_args()
 
     steps: list[tuple[str, list[str], Path]] = [
@@ -41,6 +42,8 @@ def main() -> int:
             ("web test", [npm, "test"], WEB_DIR),
             ("web build", [npm, "run", "build"], WEB_DIR),
         ]
+        if not args.skip_e2e:
+            steps.append(("web e2e", [npm, "run", "e2e"], WEB_DIR))
 
     results: list[tuple[str, bool, float]] = []
     for name, cmd, cwd in steps:

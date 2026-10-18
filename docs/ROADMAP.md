@@ -18,7 +18,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
 - **Deliverables:** 15 docs + README.
 - **Exit criteria:** owner approval; decisions in §B of the plan answered.
 
-### P1: Foundation (current)
+### P1: Foundation ✅ (merged; Windows smoke test passed 2026-10-18)
 - **Goal:** a reproducible workspace on both OSes, a health endpoint, mock mode, scripts, and CI.
 - **Deliverables:**
   - uv workspace (root + `services/ai-backend`);
@@ -43,7 +43,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   6. Python wheel availability is recorded (done 2026-10-18; this led to the move to Python 3.12) for fastapi, numpy, onnxruntime, mediapipe, and faster-whisper on `macosx_arm64` and `win_amd64`. This means *checking PyPI*, not installing.
 - **Test plan:** pytest (health, config, security, errors, mock classifier); Vitest (app shell, a11y); a contract test for the health example.
 
-### P2: Frontend skeleton
+### P2: Frontend skeleton (current: built, awaiting owner review)
 - **Deliverables:**
   - permission flows: denied, unavailable, in use;
   - mirrored preview and camera selector;
