@@ -14,6 +14,7 @@
 | Settings | Browser `localStorage` | Yes | Never |
 | Feedback (P6) | `DATA_ROOT/feedback/feedback.jsonl` | Yes (no free text) | Never |
 | Research data | `DATA_ROOT` (Windows laptop, outside the repo) | Yes, under consent | Only via encrypted, logged transfer |
+| Recorder uploads (P4) | Browser → backend over localhost, landmarks only | Yes: `.npz` plus a manifest row in `DATA_ROOT` (refused if `DATA_ROOT` is inside the repo) | Never |
 | Identity register | Encrypted, outside `DATA_ROOT` | Yes | Never |
 
 ## 2. Controls
