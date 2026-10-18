@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vsl-classroom-assistant/manifest-sample-v1",
+  "title": "SampleRecord (manifests/samples.jsonl, one JSON object per line)",
+  "description": "Kept in sync with vsl_features.dataset.SampleRecord by a test. Pseudonymous IDs only; never names. Stored in DATA_ROOT, never in git.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sample_id", "signer_id", "session_id", "label", "sample_kind", "consent_id", "consent_scopes",
+    "dominant_hand", "conditions", "fps", "n_frames", "dropped_frames", "take_ms", "image_w", "image_h",
+    "feature_spec_version", "extractor_version", "extractor_backend", "file", "sha256", "collected_at",
+    "manifest_version"
+  ],
+  "properties": {
+    "sample_id": { "type": "string", "pattern": "^S\\d{8}-\\d{6}-[0-9a-f]{4}-\\d{3}$" },
+    "signer_id": { "type": "string", "pattern": "^[A-Z]{2,5}-\\d{2,4}$", "description": "Pseudonymous; DEV-.. = the developer" },
+    "session_id": { "type": "string", "pattern": "^S\\d{8}-\\d{6}-[0-9a-f]{4}$" },
+    "label": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,39}$", "description": "gloss_id as recorded (relabels are review events)" },
+    "sample_kind": { "enum": ["target", "distractor", "background"] },
+    "consent_id": { "type": "string", "pattern": "^(SELF|C-\\d{4,6})$", "description": "SELF until the consent package (B2) is approved" },
+    "consent_scopes": { "type": "array", "items": { "enum": ["landmarks", "raw_video", "reference_clip", "public_model", "portfolio"] } },
+    "dominant_hand": { "enum": ["right", "left"] },
+    "conditions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lighting": { "type": "string" },
+        "background": { "type": "string" },
+        "camera": { "type": "string" },
+        "distance": { "type": "string" }
+      }
+    },
+    "fps": { "type": "number", "exclusiveMinimum": 0 },
+    "n_frames": { "type": "integer", "minimum": 1 },
+    "dropped_frames": { "type": "integer", "minimum": 0 },
+    "take_ms": { "type": "integer", "minimum": 1 },
+    "image_w": { "type": "integer" },
+    "image_h": { "type": "integer" },
+    "feature_spec_version": { "type": "string" },
+    "extractor_version": { "type": "string" },
+    "extractor_backend": { "type": "string" },
+    "file": { "type": "string", "description": "Relative to DATA_ROOT: landmarks/<signer>/<session>/<sample>.npz" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "collected_at": { "type": "string", "format": "date-time" },
+    "manifest_version": { "const": 1 }
+  }
+}

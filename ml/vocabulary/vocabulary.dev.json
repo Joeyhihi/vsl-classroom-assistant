@@ -1,0 +1,15 @@
+{
+  "vocabulary_version": "dev-1",
+  "developer_only": true,
+  "note": "PLACEHOLDER developer vocabulary for self-recording (Phase 4). NOT validated VSL. Rename DEV_xx texts to your own signs; the real vocabulary comes from expert review (B1).",
+  "items": [
+    { "gloss_id": "DEV_01", "text_vi": "Ký hiệu thử 1", "icon": "hand", "sample_kind": "target" },
+    { "gloss_id": "DEV_02", "text_vi": "Ký hiệu thử 2", "icon": "hand", "sample_kind": "target" },
+    { "gloss_id": "DEV_03", "text_vi": "Ký hiệu thử 3", "icon": "hand", "sample_kind": "target" },
+    { "gloss_id": "DST_01", "text_vi": "Ký hiệu khác (ngoài từ vựng)", "icon": "question", "sample_kind": "distractor" },
+    { "gloss_id": "REST_DESK", "text_vi": "Tay nghỉ trên bàn", "icon": "rest", "sample_kind": "background" },
+    { "gloss_id": "REST_LAP", "text_vi": "Tay nghỉ trong lòng", "icon": "rest", "sample_kind": "background" },
+    { "gloss_id": "REST_DOWN", "text_vi": "Tay buông xuôi", "icon": "rest", "sample_kind": "background" },
+    { "gloss_id": "HOLD", "text_vi": "Giữ tay yên trước ngực", "icon": "pause", "sample_kind": "background" }
+  ]
+}
