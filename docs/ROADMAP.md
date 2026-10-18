@@ -1,5 +1,7 @@
 # Roadmap
 
+> **Status (2026-10-19): the build is complete.** All phases are merged; what remains is Windows testing and people work. See [STATUS.md](STATUS.md).
+
 Work runs in **two parallel tracks**. A phase is complete only when **all** of its exit criteria hold **and the owner has reviewed it**. Nothing is committed without the owner's approval. Steps marked **[WIN]** run only on the Windows laptop; the M1 uses mock mode and unit tests only.
 
 ## Track B: people, vocabulary, consent (starts now)
@@ -131,7 +133,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - B3 pilot quality report, including inter-annotator agreement.
   - No data inside the repo (guard test passes).
 
-### P5: Dataset + first model (requires B4) **[WIN]** — current: pipeline built 2026-10-18 (prototype mode, PR pending review)
+### P5: Dataset + first model (requires B4) **[WIN]** — pipeline merged 2026-10-19 (#11, prototype mode); Windows run pending
 
 - **Owner decision (2026-10-18): fast prototype.** The pipeline is built and run on the developer's own recordings now. B4 data is still needed for G5. Details: [AI_ML_STRATEGY.md §2b](AI_ML_STRATEGY.md#2b-phase-5-implementation-as-built-prototype-mode).
 - **Status:**
@@ -156,7 +158,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - ML smoke job in CI (synthetic data).
 - **Gate G5 (go/no-go):** the owner reviews macro-F1, per-signer minimum, and open-set FAR on held-out signers. The owner then approves the target operating point **or** a pivot: a smaller vocabulary, more data, different features, or stopping.
 
-### P6: Stabilisation & UX — current: code built 2026-10-18 (mock-tested, PR pending review)
+### P6: Stabilisation & UX — merged 2026-10-19 (#12); Windows run pending
 
 - **Status:**
 
@@ -179,7 +181,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - Backend TTS is **not** included (deferred).
 - **Exit criteria:** every failure-mode row is tested; UX sessions with Deaf users are scheduled.
 
-### P7: STT subtitles (gated) **[WIN]** — current: code built 2026-10-18 (fake-engine tested, PR pending review)
+### P7: STT subtitles (gated) **[WIN]** — merged 2026-10-19 (#13); Windows run and G7 pending
 
 - **Status:**
 
@@ -208,7 +210,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - privacy checklist ([SECURITY_AND_PRIVACY.md](SECURITY_AND_PRIVACY.md#4-privacy-review-checklist-run-before-p8-and-p9));
   - full Windows pass.
 
-### P9: Packaging + controlled adult pilot — current: packaging and tools built 2026-10-18 (PR pending review)
+### P9: Packaging + controlled adult pilot — merged 2026-10-19 (#14); pilot blocked on G5 / B2
 
 - **Status:**
 

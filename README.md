@@ -3,10 +3,10 @@
 A local-first web app that helps Deaf and hard-of-hearing students communicate with hearing teachers and classmates. It does this in three ways:
 
 - **Sign to speech.** It recognises a **small, expert-validated vocabulary** of Vietnamese Sign Language (VSL) message units from a webcam and shows them as Vietnamese text. It speaks the text aloud only **after the student confirms**.
-- **Speech to subtitles.** It turns spoken Vietnamese into subtitles. This feature is gated and planned for later.
+- **Speech to subtitles.** It turns the teacher's spoken Vietnamese into subtitles with push-to-talk. This feature is off by default until gate G7.
 - **Manual text.** It always offers manual text as a fallback.
 
-> **Status: Phase 1 (Foundation).** Sign recognition does **not** exist yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status (2026-10-19): build complete, Windows testing next.** All phases (P0–P9) are built and merged. Sign recognition so far uses the developer's own recordings (prototype); a model for other signers needs consented data (B2, B4). See [docs/STATUS.md](docs/STATUS.md).
 
 ## Honest limitations
 
@@ -58,7 +58,7 @@ docs/                  planning & architecture documents
 | [Security & privacy](docs/SECURITY_AND_PRIVACY.md) | [Cross-platform setup](docs/CROSS_PLATFORM_SETUP.md) |
 | [Testing strategy](docs/TESTING_STRATEGY.md) | [Roadmap](docs/ROADMAP.md) |
 | [Decisions (ADRs)](docs/DECISIONS.md) | [Risks & open questions](docs/RISKS_AND_OPEN_QUESTIONS.md) |
-| [Pilot protocol (draft)](docs/PILOT_PROTOCOL.md) | |
+| [Pilot protocol (draft)](docs/PILOT_PROTOCOL.md) | [**Project status**](docs/STATUS.md) |
 
 ## Contributing data
 
