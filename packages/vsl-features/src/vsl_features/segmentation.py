@@ -63,11 +63,29 @@ class _Track:
     last_moving_index: int = 0
 
 
-def _active_wrists(body: BodyFrame | None, rest_line: float) -> list[np.ndarray]:
+Wrists = dict[str, np.ndarray]  # "left"/"right" → wrist (shoulder widths)
+
+
+def _active_wrists(body: BodyFrame | None, rest_line: float) -> Wrists:
     if body is None:
-        return []
-    wrists = [w for w in (body.left_wrist, body.right_wrist) if w is not None]
-    return [w for w in wrists if w[1] < rest_line]
+        return {}
+    wrists = {"left": body.left_wrist, "right": body.right_wrist}
+    return {side: w for side, w in wrists.items() if w is not None and w[1] < rest_line}
+
+
+def wrist_speed(prev: tuple[float, Wrists] | None, t_ms: float, wrists: Wrists) -> float:
+    """Fastest wrist, comparing each hand only with ITSELF in the previous frame.
+
+    Comparing unlabelled lists measured the distance between the two hands as
+    "motion" when one hand appeared and the other vanished.
+    """
+    if prev is None:
+        return 0.0
+    dt = (t_ms - prev[0]) / 1000.0
+    common = wrists.keys() & prev[1].keys()
+    if dt <= 0 or not common:
+        return 0.0
+    return max(float(np.linalg.norm(wrists[s] - prev[1][s])) for s in common) / dt
 
 
 class UtteranceSegmenter:
@@ -81,18 +99,13 @@ class UtteranceSegmenter:
         self.state: SegmenterState = "waiting_for_hands"
         self._preroll.clear()
         self._candidate_since: float | None = None
-        self._prev: tuple[float, list[np.ndarray]] | None = None
+        self._prev: tuple[float, Wrists] | None = None
         self._track: _Track | None = None
 
-    def _speed(self, t_ms: float, wrists: list[np.ndarray]) -> float:
-        prev = self._prev
+    def _speed(self, t_ms: float, wrists: Wrists) -> float:
+        speed = wrist_speed(self._prev, t_ms, wrists)
         self._prev = (t_ms, wrists)
-        if prev is None or not wrists or not prev[1] or len(prev[1]) != len(wrists):
-            return 0.0
-        dt = (t_ms - prev[0]) / 1000.0
-        if dt <= 0:
-            return 0.0
-        return max(float(np.linalg.norm(a - b)) for a, b in zip(wrists, prev[1], strict=True)) / dt
+        return speed
 
     def push(self, frame: Frame) -> Utterance | None:
         """Feed one frame; returns an utterance when one closes."""

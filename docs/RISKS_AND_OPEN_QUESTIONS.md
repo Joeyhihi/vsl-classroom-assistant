@@ -30,7 +30,7 @@
 | Piper vi_VN and VieNeu licences | Unverified | Post-MVP only |
 | Local vi-VN voices on macOS and Windows | **macOS recorded (2026-10-18):** macOS 15.8 + Chrome 155 exposes one Vietnamese voice, "Linh" (`vi-VN`, `localService: true`), in headless and headed mode, with no network Vietnamese voices. **Windows: not yet checked.** | Windows: open Settings → Chẩn đoán in the app on the Acer laptop (P2 exit) |
 | Worker spike: MediaPipe tasks-vision 1.0.1 in a module Web Worker (ES-module WASM loader, GPU delegate) | **Unverified**: code written, never executed (no MediaPipe on the Mac) | P3 Windows step 2 |
-| Python `HolisticLandmarker` API and result shape in mediapipe 1.x (L3) | **Unverified**: the adapter accepts both result shapes; tested only with fakes | P3 Windows step 6 |
+| Python `HolisticLandmarker` API and result shape in mediapipe 1.x (L3) | **Unverified; P3 closed without executing L3** (owner decision). The backend reports the extractor as available on Windows; the adapter is tested only with fakes. | Before relying on L3 (any machine where L2 is too slow) |
 | Left/right-hand convention | **L2 checked on Windows (2026-10-18):** HandLandmarker's label names the signer's own hand on unmirrored frames (it was being swapped wrongly) and flickers under fast motion. Fixed by matching hands to the pose wrists. **L1 Holistic and L3: still to check** in the final run, including whether the pose's own left/right is anatomical. | P3 final Windows run, step 3 |
 | Holistic model URL uses `/latest/`, not a fixed version | Mitigated by sha256 pinning on first fetch (trust on first use) | P3 Windows step 1 |
 | Backend RSS in mock mode | **Measured on the M1 (2026-10-18): about 46 MB** for the Python process, plus about 24 MB for the `uv run` wrapper | Re-measure in P3 with the WS endpoint |
@@ -109,3 +109,9 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
 
   **Known limitation:** L2 (Hand + Pose, two tasks) cannot run in the module Web Worker. tasks-vision 1.0.1 fails with "ModuleFactory not set" when creating the second task, so L2 uses the main thread. L1 (one Holistic task) runs in the worker. Not fixed: no way to test it on the Mac, and L2 still reached 25.5 fps on the main thread.
   **Open UX question for P4/P6:** should hands resting on a desk count as "rest"? This decides whether signs end after 0.6 s or 1.5 s. Signer sessions decide it, together with the pause tolerance.
+- **Windows run 3 / Phase 3 closed.**
+  - With measurement fixed, **L2 meets the criterion: 22.8 fps, processing p95 146 ms**. L1 fell to 12.4 fps.
+  - **L3 was never executed** (owner accepted). The run labelled L3 showed `L1 worker/GPU`, because the level only applies after stopping and restarting.
+  - **Segmentation is the next real risk:** 26/31 signs ended at the 4 s maximum. Even the synthetic HOLD takes show jitter (≈0.4 shoulder widths/s at ±0.002 noise) above the current 0.15 "still" threshold, so the threshold is unrealistic for tracker data.
+  - Bug fixed alongside: wrist speed compared the hands without labels, so one hand vanishing while the other appeared counted as fast motion and could start a false unit.
+  - Next: tune the thresholds from the owner's recordings (P4 first task).
