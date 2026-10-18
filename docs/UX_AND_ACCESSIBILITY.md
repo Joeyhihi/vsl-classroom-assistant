@@ -67,6 +67,15 @@ Status changes are announced through an `aria-live="polite"` region. A `rejected
 - **Literacy:** every message unit shows an icon. The guide uses reference clips. Experts approve short, simple `text_vi`.
 - **Bystanders:** a persistent "Camera đang bật" (camera on) indicator. The overlay shows who is being tracked, with positioning tips.
 
+## Phase 2 implementation notes
+
+- Navigation is three buttons with `aria-current="page"`: Giao tiếp (communicate), Cài đặt (settings), Quyền riêng tư (privacy). Camera state lives above the views, so the camera keeps running when switching views.
+- The camera panel explains why the camera is needed before the browser prompt. Each failure state (denied, unavailable, in use, insecure) has its own message, recovery step and Retry button, rendered as `role="alert"`.
+- The transcript is a `role="log"` region containing an ordered list. Each entry shows speaker, source, time and a Speak button; spoken entries get an "Đã đọc" (spoken) badge.
+- Manual text: Enter sends, Shift+Enter adds a new line (IME composition is respected), up to 500 characters, NFC-normalised.
+- While speech is playing, a "Đang phát" (playing) indicator with a Stop button is shown. If there is no local vi-VN voice, a notice explains how to install one on macOS and on Windows.
+- Settings shows a voice diagnostics list (this is how voice availability is recorded per machine) and a two-step "delete local data" action.
+
 ## Accessibility checks
 
 - Automated: `vitest-axe` on every component and view (P1+); Playwright + axe on the main flows (P2+).

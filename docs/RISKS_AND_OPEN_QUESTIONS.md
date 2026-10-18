@@ -28,7 +28,7 @@
 | GTX 16xx fp16 problems with CTranslate2 | Unverified (reported in other stacks) | P7 |
 | ~1.5 GB VRAM used by Windows + Chrome | Unverified estimate | P3 [WIN] Task Manager |
 | Piper vi_VN and VieNeu licences | Unverified | Post-MVP only |
-| Local vi-VN voices on macOS and Windows | Unverified | P2 |
+| Local vi-VN voices on macOS and Windows | **macOS recorded (2026-10-18):** macOS 15.8 + Chrome 155 exposes one Vietnamese voice, "Linh" (`vi-VN`, `localService: true`), in headless and headed mode, with no network Vietnamese voices. **Windows: not yet checked.** | Windows: open Settings → Chẩn đoán in the app on the Acer laptop (P2 exit) |
 | Backend RSS in mock mode | **Measured on the M1 (2026-10-18): about 46 MB** for the Python process, plus about 24 MB for the `uv run` wrapper | Re-measure in P3 with the WS endpoint |
 | Vietnamese data-protection applicability | Not reviewed | B2 |
 

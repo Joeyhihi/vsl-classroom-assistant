@@ -15,6 +15,7 @@ export default defineConfig({
   preview: { host: "localhost", port: 5173, strictPort: true, proxy: backend },
   test: {
     environment: "jsdom",
+    include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
   },

@@ -37,8 +37,11 @@ Every row in [ARCHITECTURE.md § Failure modes](ARCHITECTURE.md#failure-modes) n
 6. `npm run typecheck`
 7. `npm test` (Vitest)
 8. `npm run build`
+9. `npm run e2e` (Playwright; skip with `--skip-e2e`)
 
-CI adds **gitleaks** and runs everything on **Ubuntu and Windows**.
+CI adds **gitleaks**, installs Playwright Chromium, and runs everything on **Ubuntu and Windows**.
+
+**Phase 2 e2e coverage:** fake-camera preview (mirrored), camera selector and stop; camera denied, unavailable and in use; manual text → transcript → local-voice speech; offline banner with manual text still working; settings voice diagnostics; axe (full WCAG 2.2 AA rules, including colour contrast) on every view in light and dark mode and in the error states; no requests outside localhost.
 
 ## Merge gates
 

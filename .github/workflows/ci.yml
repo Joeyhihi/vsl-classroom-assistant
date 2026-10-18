@@ -29,6 +29,9 @@ jobs:
       - name: Install web deps (locked)
         run: npm ci
         working-directory: apps/web
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
       - name: Quality gates
         run: uv run python scripts/check.py
 

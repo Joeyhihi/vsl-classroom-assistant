@@ -120,9 +120,17 @@ The existing `.gitignore` plus the P1 additions exclude:
 - [ ] `run_web.py` starts; http://localhost:5173 shows the app and the backend status as connected
 - [ ] Stopping the backend shows the "Mất kết nối máy chủ" (lost connection to server) state in the UI
 - [ ] Ctrl+C stops each process cleanly
-- [ ] (P2+) Local vi-VN voice availability recorded; (P3+) fps and latency benchmark recorded
+- [ ] (P2+) In the app, open **Cài đặt → Chẩn đoán** and record the "Giọng tiếng Việt: N cục bộ, M trực tuyến" line and the voice names. If there are 0 local voices, install one (Settings → Time & language → Speech → Add voices → Vietnamese) and check again.
+- [ ] (P2+) `npm run e2e` in `apps/web` passes (uses the installed Chrome)
+- [ ] (P3+) fps and latency benchmark recorded
 
-## 9. Troubleshooting
+## 9. End-to-end tests (Playwright)
+
+- `npm run e2e` in `apps/web`, also run by `scripts/check.py` (use `--skip-e2e` to skip).
+- **Locally** it drives the installed **Google Chrome** (`channel: "chrome"`), so the 8 GB Mac needs no extra browser download. **CI** installs Playwright's Chromium. Override with `PW_CHANNEL`, e.g. `PW_CHANNEL=msedge` or `PW_CHANNEL=chromium` (the latter needs `npx playwright install chromium`).
+- Tests use Chrome's synthetic fake camera (a test pattern, no real person), a mocked `/api/v1/health` (no backend needed) and a stubbed `speechSynthesis`, so they run without a webcam, microphone, backend or model.
+
+## 10. Troubleshooting
 
 | Symptom | Fix |
 |---|---|

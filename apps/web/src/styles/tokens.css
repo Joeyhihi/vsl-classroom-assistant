@@ -18,6 +18,12 @@
   --color-danger: #b3261e;
   --color-mock-bg: #5b1a8c;
   --color-mock-text: #ffffff;
+  --color-live-bg: #b3261e;
+  --color-live-text: #ffffff;
+  --color-primary: #0b57d0;
+  --color-primary-text: #ffffff;
+  --color-danger-bg: #fdecea;
+  --color-warning-bg: #fff4e5;
 
   --radius: 0.5rem;
   --space-1: 0.5rem;
@@ -37,5 +43,9 @@
     --color-success: #6dd58c;
     --color-warning: #ffb95c;
     --color-danger: #ffb4ab;
+    --color-primary: #a8c7fa;
+    --color-primary-text: #062e6f;
+    --color-danger-bg: #3b1412;
+    --color-warning-bg: #3a2600;
   }
 }

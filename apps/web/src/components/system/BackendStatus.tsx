@@ -1,10 +1,6 @@
 import type { BackendHealthState } from "../../features/health/useBackendHealth";
 import { vi } from "../../i18n/vi";
-
-type Tone = "info" | "success" | "warning" | "danger";
-
-// Status is always text + icon + colour, never colour or sound alone.
-const ICONS: Record<Tone, string> = { info: "⏳", success: "✔", warning: "⚠", danger: "✖" };
+import { StatusLine, type Tone } from "../ui/StatusLine";
 
 function summary(state: BackendHealthState): { tone: Tone; text: string } {
   switch (state.kind) {
@@ -28,10 +24,10 @@ export function BackendStatus({ state }: { state: BackendHealthState }) {
   return (
     <section className="card" aria-labelledby="backend-heading">
       <h2 id="backend-heading">{vi.backend.heading}</h2>
-      <p className={`status status--${tone}`} role="status" aria-live="polite">
-        <span aria-hidden="true">{ICONS[tone]}</span> {text}
-      </p>
-      {state.kind === "offline" && <p className="hint">{vi.backend.offlineHelp}</p>}
+      <div role="status" aria-live="polite">
+        <StatusLine tone={tone} text={text} />
+      </div>
+      {state.kind === "offline" && <p className="hint mono">{vi.backend.offlineHelp}</p>}
       {health && (
         <dl className="components">
           {(Object.keys(vi.components) as (keyof typeof vi.components)[]).map((key) => (
