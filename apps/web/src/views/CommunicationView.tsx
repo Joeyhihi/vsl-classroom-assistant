@@ -1,12 +1,14 @@
-import type { PredictionMessage, ScoredLabelWire } from "../api/generated/contracts";
+import type { ComponentHealth, PredictionMessage, ScoredLabelWire } from "../api/generated/contracts";
 import { CameraPanel } from "../components/camera/CameraPanel";
 import { ManualTextInput } from "../components/compose/ManualTextInput";
 import { RecognitionPanel } from "../components/recognition/RecognitionPanel";
+import { SubtitlePanel } from "../components/speech/SubtitlePanel";
 import { TtsStatus } from "../components/speech/TtsStatus";
 import { TranscriptPanel, type FeedbackOptions } from "../components/transcript/TranscriptPanel";
 import type { CameraState } from "../features/camera/useCamera";
 import type { CameraDevice } from "../features/camera/useMediaDevices";
 import type { RecognitionController, SourceKind } from "../features/recognition/useRecognitionSession";
+import type { PushToTalkController } from "../features/stt/usePushToTalk";
 import type { TranscriptEntry } from "../features/transcript/transcriptStore";
 import type { TtsController } from "../features/tts/useTts";
 
@@ -27,6 +29,8 @@ interface Props {
   onConfirmPrediction: (label: ScoredLabelWire, prediction: PredictionMessage) => void;
   onAcceptL3: () => void;
   feedback?: FeedbackOptions;
+  /** Shown only when the backend has STT enabled (P7, gated). */
+  stt?: { health: ComponentHealth; ptt: PushToTalkController };
 }
 
 export function CommunicationView(props: Props) {
@@ -50,6 +54,7 @@ export function CommunicationView(props: Props) {
         />
         <ManualTextInput canSpeak={canSpeak} onSubmit={props.onSendMessage} />
         <TtsStatus tts={props.tts} />
+        {props.stt && <SubtitlePanel health={props.stt.health} ptt={props.stt.ptt} />}
       </div>
       <div className="layout__side">
         <TranscriptPanel

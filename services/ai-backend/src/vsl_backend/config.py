@@ -38,7 +38,14 @@ class Settings(BaseSettings):
 
     model_artifacts_dir: Path = Path("model-artifacts")
     data_root: Path | None = None
+    # P7 speech-to-text (gated, Windows only). `stt_model` is a faster-whisper size
+    # name (downloaded to model-artifacts/stt/ on first use) or a local CTranslate2 dir.
     stt_enabled: bool = False
+    stt_model: str = "small"
+    stt_device: Literal["cpu", "cuda"] = "cpu"
+    stt_compute_type: str = "int8"
+    stt_max_audio_s: float = Field(default=30.0, gt=0, le=120)
+    stt_max_body_bytes: int = Field(default=2 * 1024 * 1024 + 64 * 1024, gt=0)
 
     # L3 server-side extraction (ADR-002). Needs the `server-extraction` extra and
     # the Holistic model fetched by `bootstrap.py --with-models` (Windows only).

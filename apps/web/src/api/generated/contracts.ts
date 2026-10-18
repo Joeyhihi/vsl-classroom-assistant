@@ -45,6 +45,7 @@ export interface Contracts {
   SessionStop?: SessionStop;
   SessionStopped?: SessionStopped;
   StatusMessage?: StatusMessage;
+  TranscriptionResponse?: TranscriptionResponse;
   VocabularyResponse?: VocabularyResponse;
 }
 /**
@@ -444,6 +445,26 @@ export interface StatusMessage {
   pose_visible: boolean;
   state: "waiting_for_hands" | "ready" | "signing";
   type: "status";
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "TranscriptionResponse".
+ */
+export interface TranscriptionResponse {
+  duration_ms: number;
+  model_id: string;
+  processing_ms: number;
+  segments: TranscriptSegment[];
+  text: string;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "TranscriptSegment".
+ */
+export interface TranscriptSegment {
+  end_ms: number;
+  start_ms: number;
+  text: string;
 }
 /**
  * This interface was referenced by `Contracts`'s JSON-Schema

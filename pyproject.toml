@@ -12,11 +12,15 @@ dependencies = ["vsl-backend", "vsl-features", "vsl-ml"]
 #   uv run --extra train ...             training + ONNX serving (P5)
 #   uv run --extra onnx ...              ONNX serving only
 #   uv run --extra server-extraction ... L3 server-side MediaPipe
+#   uv run --extra stt ...               P7 speech-to-text (faster-whisper)
 # A plain `uv sync` removes them again, so pass the extra every time.
 [project.optional-dependencies]
 train = ["vsl-ml[train]", "vsl-backend[onnx]"]
 onnx = ["vsl-backend[onnx]"]
 server-extraction = ["vsl-backend[server-extraction]"]
+stt = ["vsl-backend[stt]"]
+# Everything the Windows laptop runs: train + serve ONNX + STT.
+windows = ["vsl-ml[train]", "vsl-backend[onnx]", "vsl-backend[stt]"]
 
 [dependency-groups]
 dev = [
@@ -82,7 +86,7 @@ files = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["psutil", "mediapipe", "mediapipe.*", "onnxruntime", "onnxruntime.*"]
+module = ["psutil", "mediapipe", "mediapipe.*", "onnxruntime", "onnxruntime.*", "faster_whisper"]
 ignore_missing_imports = true
 
 # torch is not installed on the M1 or in the main CI job; without its stubs the

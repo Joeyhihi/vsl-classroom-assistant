@@ -13,10 +13,12 @@ import { useSettings } from "./features/settings/settingsStore";
 import {
   createManualEntry,
   createSignEntry,
+  createSpeechEntry,
   useTranscript,
   type FeedbackVerdict,
   type TranscriptEntry,
 } from "./features/transcript/transcriptStore";
+import { usePushToTalk } from "./features/stt/usePushToTalk";
 import { useTts } from "./features/tts/useTts";
 import { useVocabulary } from "./features/vocabulary/useVocabulary";
 import { vi } from "./i18n/vi";
@@ -48,6 +50,9 @@ export function App() {
   const isMock = backend.kind === "online" && backend.health.model_mode === "mock";
   const online = backend.kind === "online";
   const vocabulary = useVocabulary(online, online ? backend.health.model_mode : null);
+  const ptt = usePushToTalk((text) => transcript.add(createSpeechEntry(text)));
+  const sttHealth = online ? backend.health.components.stt : null;
+  const stt = sttHealth && sttHealth.status !== "disabled" ? { health: sttHealth, ptt } : undefined;
   const stream = camera.state.kind === "active" ? camera.state.stream : null;
   const recognition = useRecognitionSession({
     sourceKind: SOURCE_KIND,
@@ -181,6 +186,7 @@ export function App() {
             onConfirmPrediction={confirmPrediction}
             onAcceptL3={acceptL3}
             feedback={feedback}
+            stt={stt}
           />
         )}
         {view === "display" && <LargeDisplayView entries={transcript.entries} />}

@@ -179,7 +179,18 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - Backend TTS is **not** included (deferred).
 - **Exit criteria:** every failure-mode row is tested; UX sessions with Deaf users are scheduled.
 
-### P7: STT subtitles (gated) **[WIN]**
+### P7: STT subtitles (gated) **[WIN]** — current: code built 2026-10-18 (fake-engine tested, PR pending review)
+
+- **Status:**
+
+  | Deliverable | Status |
+  |---|---|
+  | Push-to-talk capture, `/stt/transcriptions` | Done: hold button or Space, 16 kHz WAV, ≤ 30 s, audio never stored |
+  | faster-whisper CPU int8 via the ResourceManager | Done (lazy load, idle unload, RAM guard); `--extra stt` |
+  | CUDA OOM → CPU fallback | Done (fake-engine tests); GPU stays off by default |
+  | WER + latency for ≥2 sizes, RSS | `scripts/benchmark_stt.py` ready; **run on Windows with a consented test set** |
+  | Gate G7 | Owner decision after the benchmark |
+
 - **Deliverables:**
   - push-to-talk capture; `/stt/transcriptions`;
   - faster-whisper (or PhoWhisper in CTranslate2 format) on **CPU int8**;
