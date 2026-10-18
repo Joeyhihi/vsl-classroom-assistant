@@ -28,9 +28,11 @@
 
 ## 2a. Phase 3 implementation (as built)
 
-- **Segmenter** (`vsl_features/segmentation.py`) defaults:
-  - rest line 1.2 shoulder widths below the shoulder midpoint;
-  - start when a hand is above the rest line and moves at ≥ 0.6 shoulder widths/s for ≥ 120 ms (150 ms pre-roll, measured from the candidate start, so low fps does not cut the first frames);
+- **Segmenter** (`vsl_features/segmentation.py`) defaults, **tuned in P4 on the developer's own L2 takes** (laptop webcam; provisional, since there was 1 take per label):
+  - rest line **0.45** shoulder widths below the shoulder midpoint (was 1.2, which sat below the bottom of a laptop frame, so visible resting hands never counted as rest);
+  - wrist speed is **smoothed** (EMA, 150 ms) and compared per hand;
+  - start when a hand is above the rest line and its smoothed speed is ≥ **1.0** shoulder widths/s for ≥ 120 ms (150 ms pre-roll, measured from the candidate start, so low fps does not cut the first frames);
+  - "still" means a smoothed speed below **0.7** (was 0.15, below real tracker jitter of ~0.34–0.6);
   - pause tolerance 600 ms; a still hold of ≥ 1500 ms also ends the unit. A still close cuts the unit at the **last moving frame**, and its wait (`hysteresis_ms`) is measured from there. Before P3 run 2 the still frames were kept and the wait was reported as 0;
   - min 300 ms, max 4000 ms.
 

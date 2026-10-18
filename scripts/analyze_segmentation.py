@@ -31,7 +31,7 @@ from vsl_features.frames import Frame, FrameError, parse_frame
 from vsl_features.normalize import body_frame
 from vsl_features.segmentation import SegmenterConfig, UtteranceSegmenter, Wrists, wrist_speed
 
-SMOOTHING_TAU_MS = 150.0  # EMA time constant for the smoothed speed
+CONFIG = SegmenterConfig()  # thresholds currently in use
 GROUPS = ("rest", "hold", "sign")
 
 
@@ -72,7 +72,12 @@ class TakeStats:
 def _speeds(
     frames: list[Frame], aspect: float
 ) -> tuple[list[float], list[float], list[float], int]:
-    """Per-frame wrist heights, raw and EMA-smoothed max wrist speed, shoulder-ok count."""
+    """Wrist heights (all visible hands), raw and smoothed speed of ACTIVE wrists only
+    (above the rest line - what the segmenter reacts to), and the shoulder-ok count.
+
+    Hands at rest or flickering at the frame edge are below the rest line, so their
+    jumps no longer count as "motion" (this produced a false NOT SEPARABLE before).
+    """
     heights: list[float] = []
     raw: list[float] = []
     smooth: list[float] = []
@@ -85,19 +90,19 @@ def _speeds(
             prev = None
             continue
         ok += 1
-        # All visible wrists (not only those above the rest line): rest jitter matters too.
-        wrists = {
+        visible = {
             s: w
             for s, w in (("left", body.left_wrist), ("right", body.right_wrist))
             if w is not None
         }
-        heights += [float(w[1]) for w in wrists.values()]
+        heights += [float(w[1]) for w in visible.values()]
+        wrists = {s: w for s, w in visible.items() if w[1] < CONFIG.rest_line}
         if prev is not None and wrists.keys() & prev[1].keys():
             dt = (frame.t_ms - prev[0]) / 1000.0
             if dt > 0:
                 speed = wrist_speed(prev, frame.t_ms, wrists)
                 raw.append(speed)
-                alpha = 1.0 - math.exp(-dt * 1000.0 / SMOOTHING_TAU_MS)
+                alpha = 1.0 - math.exp(-dt * 1000.0 / CONFIG.speed_smoothing_ms)
                 ema = speed if ema is None else ema + alpha * (speed - ema)
                 smooth.append(ema)
         prev = (frame.t_ms, wrists)
@@ -175,7 +180,7 @@ class Suggestion:
 
 
 def suggest(takes: list[TakeStats]) -> list[Suggestion]:
-    cfg = SegmenterConfig()
+    cfg = CONFIG
 
     def values(group: str, attr: str) -> list[float]:
         return [v for t in takes if t.group == group and (v := getattr(t, attr)) is not None]
@@ -232,7 +237,13 @@ def print_report(takes: list[TakeStats], suggestions: list[Suggestion]) -> None:
             f"{_fmt(t.wrist_y_p05):>7}{_fmt(t.wrist_y_p50):>7}{_fmt(t.speed_raw_p95):>11}"
             f"{_fmt(t.speed_smooth_p50):>9}/{_fmt(t.speed_smooth_p95):<8}  {seg}"
         )
-    print("\nExpected: REST_* idle, HOLD no motion start, signs started.")
+    print(
+        f"\nCurrent: rest_line {CONFIG.rest_line}, start {CONFIG.start_speed}, "
+        f"still {CONFIG.still_speed}."
+    )
+    print(
+        "Speeds count only wrists above the rest line. Expected: REST_*/HOLD idle, signs started."
+    )
     false_starts = [t for t in takes if t.group == "rest" and t.segmenter_started]
     missed = [t for t in takes if t.group == "sign" and not t.segmenter_started]
     print(

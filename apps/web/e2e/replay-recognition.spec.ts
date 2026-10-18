@@ -69,11 +69,15 @@ test("recorder: one synthetic take, landmarks only", async ({ page }) => {
   await page.getByRole("button", { name: "Ghi mẫu" }).click();
   await page.getByLabel("Mã ký hiệu (ví dụ DEV_01)").fill("DEV_01");
   await page.getByLabel("Chữ hiển thị").fill("Thử nghiệm");
+  await expect(page.getByLabel("Độ dài mỗi lượt").locator("option")).toHaveCount(2);
   await page.getByRole("button", { name: "Ghi một lượt (3 giây)" }).click();
 
   await expect(page.getByText("Chuẩn bị… 3")).toBeVisible();
   await expect(page.getByTestId("recording-banner")).toBeVisible({ timeout: 6000 });
   await expect(page.getByTestId("take-count")).toHaveText("Đã ghi 1 lượt", { timeout: 8000 });
+  // The label is locked while takes exist, so takes cannot be mislabelled.
+  await expect(page.getByLabel("Mã ký hiệu (ví dụ DEV_01)")).toBeDisabled();
+  await expect(page.getByTestId("label-lock-hint")).toBeVisible();
 
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Tải tệp ghi (.json)" }).click();
@@ -83,5 +87,16 @@ test("recorder: one synthetic take, landmarks only", async ({ page }) => {
   expect(body.format).toBe("vsl-recording-v1");
   expect(body.developer_own_data).toBe(true);
   expect(body.takes[0].frames.length).toBeGreaterThan(30); // ~3 s at 15 fps
+  expect(body.takes[0].take_ms).toBe(3000);
   expect(Object.keys(body.takes[0].frames[0]).sort()).toEqual(["face", "left_hand", "pose", "right_hand", "t_ms"]);
+});
+
+test("recorder: clearing takes unlocks the label", async ({ page }) => {
+  await page.getByRole("button", { name: "Ghi mẫu" }).click();
+  await page.getByLabel("Mã ký hiệu (ví dụ DEV_01)").fill("REST_DESK");
+  await page.getByLabel("Chữ hiển thị").fill("Nghỉ");
+  await page.getByRole("button", { name: "Ghi một lượt (3 giây)" }).click();
+  await expect(page.getByTestId("take-count")).toHaveText("Đã ghi 1 lượt", { timeout: 8000 });
+  await page.getByRole("button", { name: "Xoá các lượt" }).click();
+  await expect(page.getByLabel("Mã ký hiệu (ví dụ DEV_01)")).toBeEnabled();
 });

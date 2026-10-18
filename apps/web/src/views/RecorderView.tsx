@@ -16,7 +16,10 @@ import { vi } from "../i18n/vi";
 // kept in memory until downloaded. Phase 4 adds consent IDs and a manifest.
 
 const COUNTDOWN_S = 3;
-const TAKE_MS = 3000;
+// 6 s takes fit a sign AND the hands resting visibly afterwards (the live
+// "sign never ends" case found in P3); 3 s is enough for a sign alone.
+const TAKE_DURATIONS_MS = [3000, 6000] as const;
+type TakeMs = (typeof TAKE_DURATIONS_MS)[number];
 const EXTRACTOR_VERSION = "tasks-vision@1.0.1";
 
 export interface RecordingFile {
@@ -27,7 +30,7 @@ export interface RecordingFile {
   image_width: number;
   image_height: number;
   label: { gloss_id: string; text_vi: string; icon: string };
-  takes: { frames: WireFrame[] }[];
+  takes: { frames: WireFrame[]; take_ms: number }[];
   created_at: string;
 }
 
@@ -40,9 +43,13 @@ interface Props {
 type Phase = { kind: "idle" } | { kind: "countdown"; n: number } | { kind: "recording" } | { kind: "error"; text: string };
 
 export function RecorderView({ sourceKind, stream, level }: Props) {
-  const ids = { gloss: useId(), text: useId(), icon: useId() };
+  const ids = { gloss: useId(), text: useId(), icon: useId(), duration: useId(), lockHint: useId() };
   const [label, setLabel] = useState({ gloss_id: "", text_vi: "", icon: "hand" });
-  const [takes, setTakes] = useState<{ frames: WireFrame[] }[]>([]);
+  const [takes, setTakes] = useState<{ frames: WireFrame[]; take_ms: number }[]>([]);
+  const [takeMs, setTakeMs] = useState<TakeMs>(3000);
+  // Every take in a file gets the label shown at download time, so the label is
+  // locked while takes exist: download or clear first (no silent data loss).
+  const labelLocked = takes.length > 0;
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const meta = useRef<{ width: number; height: number; spec: string; backend: string } | null>(null);
   const source = useRef<LandmarkSource | null>(null);
@@ -93,11 +100,12 @@ export function RecorderView({ sourceKind, stream, level }: Props) {
         capturing = true;
         setPhase({ kind: "recording" });
       });
-      later(COUNTDOWN_S * 1000 + TAKE_MS, () => {
+      const duration = takeMs;
+      later(COUNTDOWN_S * 1000 + duration, () => {
         capturing = false;
         src.stop();
         source.current = null;
-        setTakes((t) => [...t, { frames }]);
+        setTakes((t) => [...t, { frames, take_ms: duration }]);
         setPhase({ kind: "idle" });
       });
     } catch {
@@ -135,15 +143,53 @@ export function RecorderView({ sourceKind, stream, level }: Props) {
       <p className="notice notice--warning">{vi.recorder.warning}</p>
       <div className="field">
         <label htmlFor={ids.gloss}>{vi.recorder.glossLabel}</label>
-        <input id={ids.gloss} value={label.gloss_id} onChange={(e) => setLabel({ ...label, gloss_id: e.target.value })} />
+        <input
+          id={ids.gloss}
+          value={label.gloss_id}
+          disabled={labelLocked}
+          aria-describedby={labelLocked ? ids.lockHint : undefined}
+          onChange={(e) => setLabel({ ...label, gloss_id: e.target.value })}
+        />
       </div>
       <div className="field">
         <label htmlFor={ids.text}>{vi.recorder.textLabel}</label>
-        <input id={ids.text} value={label.text_vi} onChange={(e) => setLabel({ ...label, text_vi: e.target.value })} />
+        <input
+          id={ids.text}
+          value={label.text_vi}
+          disabled={labelLocked}
+          aria-describedby={labelLocked ? ids.lockHint : undefined}
+          onChange={(e) => setLabel({ ...label, text_vi: e.target.value })}
+        />
       </div>
       <div className="field">
         <label htmlFor={ids.icon}>{vi.recorder.iconLabel}</label>
-        <input id={ids.icon} value={label.icon} onChange={(e) => setLabel({ ...label, icon: e.target.value })} />
+        <input
+          id={ids.icon}
+          value={label.icon}
+          disabled={labelLocked}
+          aria-describedby={labelLocked ? ids.lockHint : undefined}
+          onChange={(e) => setLabel({ ...label, icon: e.target.value })}
+        />
+      </div>
+      {labelLocked && (
+        <p id={ids.lockHint} className="hint" data-testid="label-lock-hint">
+          {vi.recorder.labelLocked}
+        </p>
+      )}
+      <div className="field">
+        <label htmlFor={ids.duration}>{vi.recorder.durationLabel}</label>
+        <select
+          id={ids.duration}
+          value={takeMs}
+          disabled={busy}
+          onChange={(e) => setTakeMs(Number(e.target.value) as TakeMs)}
+        >
+          {TAKE_DURATIONS_MS.map((ms) => (
+            <option key={ms} value={ms}>
+              {vi.recorder.duration(ms / 1000)}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div role="status" aria-live="assertive" className="recorder__status">
@@ -158,7 +204,7 @@ export function RecorderView({ sourceKind, stream, level }: Props) {
 
       <div className="row">
         <button type="button" className="btn btn--primary" disabled={busy} onClick={() => void recordTake()}>
-          {vi.recorder.record}
+          {vi.recorder.record(takeMs / 1000)}
         </button>
         <button type="button" className="btn" disabled={busy || takes.length === 0} onClick={download}>
           {vi.recorder.download}

@@ -130,9 +130,13 @@ The existing `.gitignore` plus the P1 additions exclude:
 
 1. In `.env`, set `VITE_ENABLE_RECORDER=true` and `VITE_LANDMARK_SOURCE=camera`. Restart `run_web.py --preview`, set Settings → level to **L2**, and turn on the camera in Giao tiếp (communication).
 2. In **Ghi mẫu** (record), record 5 takes each of: `REST_DESK`, `REST_LAP`, `REST_DOWN`, `HOLD` (hands raised and still), and three of your own signs (`DEV_01`–`DEV_03`, each rest → sign → rest).
-3. **After each label, download, then click "Xoá các lượt" (clear takes) before typing the next ID.** All takes in a file get the ID typed at download time.
+3. After each label, download, then click "Xoá các lượt" (clear takes). The ID field is **locked while takes exist**, so takes cannot be mislabelled. Use **6 s** takes to capture a sign followed by hands resting visibly in the frame.
 4. Files land in the browser's Downloads folder as `recording-<ID>.json`. They contain landmarks only, never video. Keep them outside the repo; on the Mac, put them in `~/vsl-data/recordings/p3-segmentation/`.
 5. Analyse with `uv run python scripts/analyze_segmentation.py ~/vsl-data/recordings/p3-segmentation/`. The report covers wrist speed and height per take, what the segmenter does, and suggested thresholds. It prints no raw landmark values.
+
+### Live check after tuning (P4 exit for segmentation)
+
+Run recognition at L2 for about 5 minutes. **Between signs, leave your hands resting visibly on the desk** (the case that used to run to 4 s). Then read Settings → Hiệu năng (performance) → "Ký hiệu kết thúc do" (how signs ended). Pass: "quá dài" (too long) is no longer the most common reason, and no units start while your hands rest. Also report the wait p50/p95.
 
 ## 9. End-to-end tests (Playwright)
 
