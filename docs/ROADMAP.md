@@ -156,7 +156,20 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - ML smoke job in CI (synthetic data).
 - **Gate G5 (go/no-go):** the owner reviews macro-F1, per-signer minimum, and open-set FAR on held-out signers. The owner then approves the target operating point **or** a pivot: a smaller vocabulary, more data, different features, or stopping.
 
-### P6: Stabilisation & UX
+### P6: Stabilisation & UX — current: code built 2026-10-18 (mock-tested, PR pending review)
+
+- **Status:**
+
+  | Deliverable | Status |
+  |---|---|
+  | Thresholds at the G5 operating point | Done in P5 (`calibration.json` from the operating point); real values wait for G5 |
+  | Uncertain and rejected UI, candidate policy | Done (P3), now with icons |
+  | Feedback API + delete | Done: `POST`/`DELETE /api/v1/feedback`, ✓/✗/? on confirmed signs (hidden in mock mode), deleted by "Xoá dữ liệu cục bộ" |
+  | SignGuideView, LargeDisplayView | Done ("Danh sách ký hiệu", "Màn hình lớn" with full-screen) |
+  | `ResourceManager` | Done (fake-engine tests); first heavy engine is STT in P7 |
+  | Every failure-mode row tested | Partly; review against ARCHITECTURE §9 |
+  | UX sessions with Deaf users scheduled | **Owner task** |
+
 - **Deliverables:**
   - thresholds at the G5 operating point;
   - uncertain and rejected UI; candidate policy;

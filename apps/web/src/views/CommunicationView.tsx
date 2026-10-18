@@ -3,7 +3,7 @@ import { CameraPanel } from "../components/camera/CameraPanel";
 import { ManualTextInput } from "../components/compose/ManualTextInput";
 import { RecognitionPanel } from "../components/recognition/RecognitionPanel";
 import { TtsStatus } from "../components/speech/TtsStatus";
-import { TranscriptPanel } from "../components/transcript/TranscriptPanel";
+import { TranscriptPanel, type FeedbackOptions } from "../components/transcript/TranscriptPanel";
 import type { CameraState } from "../features/camera/useCamera";
 import type { CameraDevice } from "../features/camera/useMediaDevices";
 import type { RecognitionController, SourceKind } from "../features/recognition/useRecognitionSession";
@@ -26,6 +26,7 @@ interface Props {
   sourceKind: SourceKind;
   onConfirmPrediction: (label: ScoredLabelWire, prediction: PredictionMessage) => void;
   onAcceptL3: () => void;
+  feedback?: FeedbackOptions;
 }
 
 export function CommunicationView(props: Props) {
@@ -57,6 +58,7 @@ export function CommunicationView(props: Props) {
           speakingId={props.tts.speakingId}
           onSpeak={props.onSpeakEntry}
           onClear={props.onClearTranscript}
+          feedback={props.feedback}
         />
       </div>
     </div>

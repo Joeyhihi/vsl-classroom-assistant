@@ -17,6 +17,7 @@ from pydantic.json_schema import models_json_schema
 
 from vsl_backend.api.v1.models import DiagnosticsResponse
 from vsl_backend.schemas.common import ErrorResponse
+from vsl_backend.schemas.feedback import FeedbackCreate, FeedbackCreated
 from vsl_backend.schemas.health import HealthResponse
 from vsl_backend.schemas.recognition import (
     ErrorMessage,
@@ -69,6 +70,8 @@ MODELS: list[type[BaseModel]] = [
     SampleList,
     SampleFrames,
     ReviewCreate,
+    FeedbackCreate,
+    FeedbackCreated,
 ]
 
 

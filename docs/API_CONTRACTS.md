@@ -125,7 +125,9 @@ class VocabularyResponse(BaseModel):
     entries: list[VocabularyEntry]
 ```
 
-### Feedback (P6)
+### Feedback (P6) — built
+
+Rows go to `DATA_ROOT/feedback/feedback.jsonl` with a server `feedback_id` and `at`. IDs are pattern-checked, unknown fields (for example a comment) give 422, and a `DATA_ROOT` inside the repo gives 422. `DELETE` is idempotent.
 
 ```python
 class FeedbackCreate(BaseModel):

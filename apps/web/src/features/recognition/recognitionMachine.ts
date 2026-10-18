@@ -19,6 +19,7 @@ export interface RecognitionState {
   serverState: StatusMessage["state"] | null;
   handsVisible: boolean;
   model: ModelInfo | null;
+  sessionId: string | null;
   extractionMode: SessionStarted["extraction_mode"] | null;
   candidate: PredictionMessage | null;
   skipped: PredictionMessage[];
@@ -36,6 +37,7 @@ export const initialRecognitionState: RecognitionState = {
   serverState: null,
   handsVisible: false,
   model: null,
+  sessionId: null,
   extractionMode: null,
   candidate: null,
   skipped: [],
@@ -66,6 +68,7 @@ export function recognitionReducer(state: RecognitionState, action: RecognitionA
         ...state,
         phase: "running",
         model: action.message.model,
+        sessionId: action.message.session_id,
         extractionMode: action.message.extraction_mode,
         reconnectAttempt: 0,
       };

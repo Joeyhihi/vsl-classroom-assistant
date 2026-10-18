@@ -24,6 +24,8 @@ export interface Contracts {
   DiagnosticsResponse?: DiagnosticsResponse;
   ErrorMessage?: ErrorMessage;
   ErrorResponse?: ErrorResponse;
+  FeedbackCreate?: FeedbackCreate;
+  FeedbackCreated?: FeedbackCreated;
   FramesBatchContract?: FramesBatchContract;
   HealthResponse?: HealthResponse;
   ModelInfo?: ModelInfo;
@@ -106,6 +108,26 @@ export interface ErrorBody {
   };
   message: string;
   request_id: string | null;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "FeedbackCreate".
+ */
+export interface FeedbackCreate {
+  confidence: number;
+  expected_gloss_id?: string | null;
+  model_id: string;
+  predicted_gloss_id?: string | null;
+  prediction_id: string;
+  session_id: string;
+  verdict: "correct" | "incorrect" | "unsure";
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "FeedbackCreated".
+ */
+export interface FeedbackCreated {
+  feedback_id: string;
 }
 /**
  * Typed view of `FramesBatch` for code generation.

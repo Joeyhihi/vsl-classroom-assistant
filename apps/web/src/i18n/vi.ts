@@ -4,7 +4,7 @@ export const vi = {
   appTitle: "Trợ lý lớp học VSL",
   appTagline: "Nhận dạng một danh sách nhỏ ký hiệu VSL — không phải phiên dịch.",
   phaseNotice:
-    "Phiên bản Giai đoạn 3 (khung thử nghiệm): nhận dạng chỉ dùng mô hình mô phỏng hoặc mẫu thử của nhà phát triển — chưa có từ vựng VSL thật.",
+    "Bản thử nghiệm: nhận dạng chỉ dùng mô hình mô phỏng hoặc mô hình thử của nhà phát triển — chưa có từ vựng VSL thật.",
 
   nav: {
     label: "Điều hướng chính",
@@ -13,6 +13,8 @@ export const vi = {
     privacy: "Quyền riêng tư",
     record: "Ghi mẫu",
     review: "Duyệt mẫu",
+    guide: "Danh sách ký hiệu",
+    display: "Màn hình lớn",
   },
 
   backend: {
@@ -131,7 +133,8 @@ export const vi = {
     deleteData: "Xoá dữ liệu cục bộ",
     deleteConfirm: "Xác nhận xoá",
     deleteCancel: "Huỷ",
-    deleteExplain: "Xoá cài đặt đã lưu và hội thoại hiện tại. Không thể hoàn tác.",
+    deleteExplain:
+      "Xoá cài đặt đã lưu, hội thoại hiện tại và các phản hồi đã gửi (lưu trên máy này). Không thể hoàn tác.",
     deleted: "Đã xoá dữ liệu cục bộ.",
   },
 
@@ -143,6 +146,7 @@ export const vi = {
       "Giọng đọc mặc định chạy cục bộ. Giọng đọc trực tuyến (gửi chữ lên mạng) bị tắt trừ khi bạn bật trong Cài đặt.",
       "Ứng dụng chỉ kết nối tới máy chủ trên chính máy này (127.0.0.1).",
       "Cài đặt (camera, giọng đọc) lưu trong trình duyệt và có thể xoá trong Cài đặt → Xoá dữ liệu cục bộ.",
+      "Phản hồi “Đúng / Sai / Không chắc” chỉ lưu mã ký hiệu và độ tin cậy vào thư mục dữ liệu trên máy này — không có chữ tự do, không gửi đi đâu, và bị xoá cùng “Xoá dữ liệu cục bộ”.",
       "Phiên bản thử nghiệm chỉ dành cho người lớn tham gia có đồng ý.",
     ],
   },
@@ -290,6 +294,35 @@ export const vi = {
       `${n} khung hình · ${fps.toFixed(1)} khung/giây · loại ${dropped}`,
     recordedAs: (label: string) => `Ghi với nhãn ${label}`,
     reviewer: "DEV-01",
+  },
+
+  feedback: {
+    question: "Kết quả này đúng không?",
+    groupLabel: (text: string) => `Phản hồi cho “${text}”`,
+    verdicts: { correct: "Đúng", incorrect: "Sai", unsure: "Không chắc" },
+    expectedLabel: "Bạn đã ký:",
+    expectedUnknown: "Không có trong danh sách",
+    send: "Gửi phản hồi",
+    cancel: "Huỷ",
+    thanks: (verdict: string) => `Đã ghi phản hồi: ${verdict}. Cảm ơn bạn!`,
+    failed: "Chưa gửi được phản hồi. Hãy thử lại.",
+  },
+  guide: {
+    heading: "Danh sách ký hiệu được hỗ trợ",
+    intro: "Ứng dụng chỉ nhận dạng các ký hiệu trong danh sách này. Đây không phải phiên dịch.",
+    devNotice: "Danh sách thử nghiệm của nhà phát triển — chưa được chuyên gia VSL xác nhận.",
+    loading: "Đang tải danh sách…",
+    unavailable: "Chưa có mô hình nhận dạng nên chưa có danh sách ký hiệu.",
+    empty: "Danh sách trống.",
+    count: (n: number, version: string) => `${n} ký hiệu · phiên bản ${version}`,
+    clipsLater: "Video mẫu cho từng ký hiệu sẽ được bổ sung khi có video đã được đồng ý.",
+  },
+  largeDisplay: {
+    heading: "Màn hình lớn cho giáo viên",
+    empty: "Chưa có tin nhắn nào được xác nhận.",
+    fullscreen: "Toàn màn hình",
+    exitHint: "Nhấn Esc để thoát toàn màn hình.",
+    fullscreenFailed: "Trình duyệt không cho phép toàn màn hình.",
   },
 
   errorBoundary: {

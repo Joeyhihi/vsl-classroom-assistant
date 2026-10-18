@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -12,6 +14,8 @@ from vsl_backend import __version__
 from vsl_backend.api.v1.router import router as v1_router
 from vsl_backend.config import Settings
 from vsl_backend.errors import install_error_handlers
+from vsl_backend.feedback_store import FeedbackStore
+from vsl_backend.inference.resource_manager import ResourceManager
 from vsl_backend.logging_config import configure_logging
 from vsl_backend.recognition.classifiers import build_classifier
 from vsl_backend.recording.service import RecorderService
@@ -24,11 +28,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     configure_logging(settings.log_level)
 
+    resources = ResourceManager(settings.heavy_model_idle_unload_s, settings.min_free_ram_mb)
+
+    async def sweep_forever() -> None:
+        while True:
+            await asyncio.sleep(settings.resource_sweep_interval_s)
+            await asyncio.to_thread(resources.sweep)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if settings.model_mode == "mock":
             logger.warning("MOCK model mode: predictions are scripted, not real recognition")
-        yield
+        sweeper = asyncio.create_task(sweep_forever())
+        try:
+            yield
+        finally:
+            sweeper.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sweeper
+            resources.shutdown()
 
     app = FastAPI(
         title="VSL Classroom Assistant API",
@@ -43,6 +61,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.classifier = load.classifier
     app.state.classifier_error = load.error
     app.state.recorder = RecorderService(settings)
+    app.state.feedback = FeedbackStore(settings.resolved_data_root)
+    app.state.resources = resources
 
     install_error_handlers(app)
     install_security_middleware(app, settings)

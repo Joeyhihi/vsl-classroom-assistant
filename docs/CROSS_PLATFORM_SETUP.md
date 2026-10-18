@@ -88,6 +88,7 @@ uv run --extra train python scripts/train_sign_model.py --model-id vsl-01   # P5
 | `VSL_STT_MODEL` / `VSL_STT_DEVICE` / `VSL_STT_COMPUTE_TYPE` | `small` / `cpu` / `int8` | P7 |
 | `VSL_HEAVY_MODEL_IDLE_UNLOAD_S` | `300` | ResourceManager |
 | `VSL_MIN_FREE_RAM_MB` / `VSL_MIN_FREE_VRAM_MB` | `1500` / `1500` | Guards (to re-tune after P3 and P7) |
+| `VSL_RESOURCE_SWEEP_INTERVAL_S` | `30` | How often idle heavy models are checked for unloading |
 | `VSL_MAX_SESSION_S` | `7200` | WS session cap |
 | `VSL_HOLISTIC_MODEL_PATH` | `apps/web/public/mediapipe/holistic_landmarker.task` | Model for L3 server extraction |
 | `VSL_COOLDOWN_MS` | `1500` | Duplicate-prediction suppression window |
