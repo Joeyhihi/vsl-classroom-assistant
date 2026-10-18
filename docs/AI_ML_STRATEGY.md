@@ -49,6 +49,19 @@
 - **Latency measurement**: frames carry `t_ms` from the **session clock**, which every source receives in `start()`. Before P3 run 2, camera sources used their own clock, started after model loading, so every sample included the whole start-up time.
 - Each prediction carries `utterance.close_reason` (rest, still, max_duration). The panel counts these so the wait numbers can be read correctly: hands on a desk above the rest line end signs by "still" (1.5 s), not "rest" (0.6 s). On each prediction, the UI records `now − utterance.end_ms` after the next paint. That figure is "hands at rest → prediction rendered", including the segmenter's hysteresis. p50/p95 are shown in Settings → Hiệu năng (performance).
 
+## 2b. Phase 5 implementation (as built, prototype mode)
+
+`scripts/train_sign_model.py` with `ml/src/vsl_ml/` (workflow: [CROSS_PLATFORM_SETUP.md §8c](CROSS_PLATFORM_SETUP.md#phase-5-workflow)):
+
+- **Data:** accepted or relabelled samples only, trimmed by the live segmenter (the same code path as serving). `distractor` samples train a `__distractor__` class and `background` samples a `__background__` class.
+- **Splits** (`splits.py`): the strongest grouping the data allows: **signer** (≥3 signers; ≥3 test signers once ≥6 exist), then **session** (≥3 sessions), then **sample** (stratified, every class kept in training). Distractor identities are split when there are ≥2. A leakage check stops the run. Anything below `signer` is labelled "prototype numbers, not a G5 result" in the report.
+- **Models:** the template DTW baseline, a GRU (bidirectional 2x128, masked mean pooling) and a TCN (dilations 1/2/4, kernel 5, masked). Both neural models normalise inside the graph (train-set mean and std), so serving feeds `sequence_features` unchanged. Training: class-balanced cross-entropy, AdamW, augmentation (speed 0.8–1.25, 10 % frame drops, noise on present parts only), early stopping on validation loss.
+- **Calibration:** temperature scaling on validation (training data if there is no validation split, flagged as optimistic). The **operating point** (τ, margin, floor 0.35) is the one with the most coverage where FAR on non-targets **and** the confident-wrong rate on targets are both ≤ `--max-far` (5 %). If no point qualifies, the safest one is used and marked "target not met".
+- **Selection:** the best on validation (target met, then macro-F1, then coverage), or `--select`. The test split is evaluated once per model and never used to choose.
+- **Export:** ONNX opset 17 (input `features` (1, time, 231), output `logits`), checked against torch (max |diff| ≤ 1e-3), then reloaded through the backend loader with sha256 checks. The model card carries the dataset fingerprint (sha256 over the manifest files), split counts and the test metrics. Models trained on `DEV-` data are `developer_only` and always `private`.
+- **Serving:** `VSL_MODEL_MODE=onnx` → `OnnxClassifier`: onnxruntime on CPU with 2 threads, softmax with the fitted temperature, then the decision policy. A winning rejection class gives `rejected`. Alternatives in `top` are signs only.
+- **Hardware:** torch and onnxruntime are an opt-in extra (`--extra train`), CPU wheels from the PyTorch CPU index. The M1 never installs them: its tests use a fake runner and skip the torch tests. The CI job `ml-smoke` trains, exports and loads on synthetic signers.
+
 ## 3. Candidate approaches
 
 | Approach | Pros | Cons | Role |

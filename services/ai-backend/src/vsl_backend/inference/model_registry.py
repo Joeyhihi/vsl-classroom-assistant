@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ValidationError
 
@@ -38,6 +38,9 @@ class ModelCard(BaseModel):
     developer_only: bool
     distribution: Literal["public", "private"]
     files: dict[str, str]  # file name → sha256
+    # Phase 5: dataset version and the G5 evaluation summary (absent on P3 templates).
+    dataset: dict[str, Any] | None = None
+    metrics: dict[str, Any] | None = None
 
 
 def sha256_file(path: Path) -> str:

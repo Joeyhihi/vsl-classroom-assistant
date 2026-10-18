@@ -1,0 +1,22 @@
+[project]
+name = "vsl-ml"
+version = "0.1.0"
+description = "Phase 5 training, evaluation, calibration and ONNX export (Windows only)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# The core (splits, metrics, calibration, augmentation) is NumPy only, so it is
+# unit-tested on the M1. Training needs the `train` extra, installed on Windows
+# and in the CI ML smoke job only: `uv run --extra train ...` from the repo root.
+dependencies = ["numpy>=2.0", "vsl-features"]
+
+[project.optional-dependencies]
+# CPU torch from the PyTorch CPU index (root pyproject); never CUDA (ADR-015).
+# Upper bound: the TorchScript ONNX exporter (`dynamo=False`) is what we use.
+train = ["torch>=2.5,<2.9", "onnx>=1.17", "onnxruntime>=1.20"]
+
+[tool.uv.sources]
+vsl-features = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"

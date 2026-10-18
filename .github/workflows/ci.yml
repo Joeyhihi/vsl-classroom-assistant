@@ -35,6 +35,27 @@ jobs:
       - name: Quality gates
         run: uv run python scripts/check.py
 
+  ml-smoke:
+    # Phase 5: train, export and load tiny models on synthetic data (CPU torch).
+    # The only place besides the Windows laptop where torch runs; never on the M1.
+    name: ML smoke (synthetic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Python deps with the train extra (locked, CPU torch)
+        run: uv sync --locked --extra train
+      - name: Torch and ONNX tests
+        run: uv run python -m pytest ml/tests services/ai-backend/tests/test_onnx_model.py
+      - name: Train, compare, export and load (synthetic signers)
+        run: >
+          uv run python scripts/train_sign_model.py --model-id ci-smoke --synthetic
+          --epochs 40 --out "${{ runner.temp }}/artifacts"
+      - name: Force-export the GRU and load it
+        run: >
+          uv run python scripts/train_sign_model.py --model-id ci-smoke-gru --synthetic
+          --archs gru --epochs 40 --out "${{ runner.temp }}/artifacts"
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:

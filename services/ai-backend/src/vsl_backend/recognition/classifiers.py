@@ -1,4 +1,4 @@
-"""Classifier protocol, the dev-only mock classifier (ADR-016) and the template classifier.
+"""Classifier protocol, the dev-only mock classifier (ADR-016), the template and ONNX classifiers.
 
 Classifiers receive the normalised feature sequence of one closed utterance
 (`vsl_features.normalize.sequence_features`) and return a decision. The mock
@@ -17,10 +17,11 @@ from numpy.typing import NDArray
 
 from vsl_backend.config import MockScript, Settings
 from vsl_backend.inference.model_registry import ModelLoadError
+from vsl_backend.inference.onnx_model import OnnxModel, load_onnx_model
 from vsl_backend.inference.template_model import TemplateModel, load_template_model
 from vsl_backend.schemas.recognition import LabelInfo, ModelInfo
 from vsl_features import FEATURE_SPEC
-from vsl_features.decoding import DecisionPolicy, softmax
+from vsl_features.decoding import REJECTION_LABELS, DecisionPolicy, softmax
 from vsl_features.dtw import dtw_distance
 
 logger = logging.getLogger(__name__)
@@ -138,7 +139,7 @@ class TemplateClassifier:
 
     @property
     def labels(self) -> list[LabelInfo]:
-        return list(self._model.labels)
+        return [label for label in self._model.labels if label.gloss_id not in REJECTION_LABELS]
 
     def classify(self, features: Features) -> Decision:
         labels = self._model.labels
@@ -150,12 +151,59 @@ class TemplateClassifier:
         cal = self._model.calibration
         finite = np.where(np.isfinite(best), best, best[np.isfinite(best)].max() * 10)
         probs = softmax((-finite).tolist(), temperature=cal.temperature)
-        order = np.argsort(finite)[:3]
-        ranked = [(labels[i].gloss_id, probs[i]) for i in order]
+        order = np.argsort(finite)
+        ranked = [(labels[i].gloss_id, probs[i]) for i in order[:3]]
         status = "rejected" if finite[order[0]] > cal.max_distance else self._policy.decide(ranked)
+        # P5 template models may carry rejection classes; alternatives are signs only.
+        signs = [i for i in order if labels[i].gloss_id not in REJECTION_LABELS][:3]
         top = tuple(
             ScoredLabel(labels[i].gloss_id, labels[i].text_vi, labels[i].icon, round(probs[i], 4))
-            for i in order
+            for i in signs
+        )
+        return Decision(status, top)
+
+
+class OnnxClassifier:
+    """Phase 5 trained model (GRU or TCN), calibrated at the G5 operating point."""
+
+    def __init__(self, model: OnnxModel) -> None:
+        self._model = model
+        cal = model.calibration
+        self._policy = DecisionPolicy(threshold=cal.threshold, margin=cal.margin, floor=cal.floor)
+
+    @property
+    def model_id(self) -> str:
+        return self._model.card.model_id
+
+    @property
+    def info(self) -> ModelInfo:
+        card = self._model.card
+        return ModelInfo(
+            model_id=card.model_id,
+            kind="onnx",
+            vocabulary_version=card.vocabulary_version,
+            feature_spec_version=card.feature_spec_version,
+            developer_only=card.developer_only,
+        )
+
+    @property
+    def labels(self) -> list[LabelInfo]:
+        """Signs only; the rejection classes are internal."""
+        return [label for label in self._model.labels if label.gloss_id not in REJECTION_LABELS]
+
+    def classify(self, features: Features) -> Decision:
+        if len(features) == 0:
+            return Decision("rejected", ())
+        labels = self._model.labels
+        logits = np.asarray(self._model.run(features[None].astype(np.float32)))[0]
+        probs = softmax(logits.tolist(), temperature=self._model.calibration.temperature)
+        order = np.argsort(-np.asarray(probs))
+        status = self._policy.decide([(labels[i].gloss_id, probs[i]) for i in order[:3]])
+        # A winning rejection class decides the status, but alternatives are signs only.
+        signs = [i for i in order if labels[i].gloss_id not in REJECTION_LABELS][:3]
+        top = tuple(
+            ScoredLabel(labels[i].gloss_id, labels[i].text_vi, labels[i].icon, round(probs[i], 4))
+            for i in signs
         )
         return Decision(status, top)
 
@@ -170,11 +218,12 @@ def build_classifier(settings: Settings) -> ClassifierLoad:
     """Load the configured classifier; failures leave the app in manual-only mode."""
     if settings.model_mode == "mock":
         return ClassifierLoad(MockClassifier(settings.mock_script))
-    if settings.model_mode == "onnx":
-        return ClassifierLoad(None, "not implemented until Phase 5")
     if not settings.sign_model_id:
         return ClassifierLoad(None, "VSL_SIGN_MODEL_ID is not set")
     try:
+        if settings.model_mode == "onnx":
+            onnx = load_onnx_model(settings.model_artifacts_dir, settings.sign_model_id)
+            return ClassifierLoad(OnnxClassifier(onnx))
         model = load_template_model(settings.model_artifacts_dir, settings.sign_model_id)
     except ModelLoadError as exc:
         logger.warning("sign model unavailable: %s", exc)
