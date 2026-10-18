@@ -22,3 +22,36 @@ ml/datasets/*
 # OS / editor
 .DS_Store
 .vscode/
+# --- Phase 1 additions (see docs/CROSS_PLATFORM_SETUP.md §7) ---
+# Models, media and data — never commit (public repo)
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.task
+*.tflite
+*.npz
+*.mp4
+*.mov
+*.webm
+*.avi
+*.wav
+*.mp3
+!**/fixtures/synthetic/**
+apps/web/public/mediapipe/
+
+# Tool caches and reports
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+htmlcov/
+.coverage
+playwright-report/
+test-results/
+*.log
+*.tsbuildinfo
+
+# Editors / OS
+.idea/
+Thumbs.db
