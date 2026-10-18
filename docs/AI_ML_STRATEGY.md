@@ -31,7 +31,7 @@
 - **Segmenter** (`vsl_features/segmentation.py`) defaults:
   - rest line 1.2 shoulder widths below the shoulder midpoint;
   - start when a hand is above the rest line and moves at ≥ 0.6 shoulder widths/s for ≥ 120 ms (150 ms pre-roll, measured from the candidate start, so low fps does not cut the first frames);
-  - pause tolerance 600 ms; a still hold of ≥ 1500 ms also ends the unit;
+  - pause tolerance 600 ms; a still hold of ≥ 1500 ms also ends the unit. A still close cuts the unit at the **last moving frame**, and its wait (`hysteresis_ms`) is measured from there. Before P3 run 2 the still frames were kept and the wait was reported as 0;
   - min 300 ms, max 4000 ms.
 
   Timing uses `t_ms`, and the tests show identical segmentation at 10, 15 and 30 fps on the synthetic signer.
@@ -44,7 +44,8 @@
 - **Template classifier**: DTW (Sakoe-Chiba band 25%), nearest template per class, softmax over −distance with a temperature, then the decision policy. Calibration (`calibrate()`) is a dev heuristic from leave-one-out template distances, **not** a G5 calibration.
 - **Synthetic signer** (`vsl_features/synth.py`): three made-up motion patterns (not VSL) that drive the replay fixture and the tests.
 - **Handedness**: hands are matched to the pose wrists (pose 15 = signer's left, 16 = right), then to last frame's positions, and only then to MediaPipe's label (`handAssigner.ts`, `vsl_features/handedness.py` for L3). Windows run 1 showed the L2 label already names the signer's own hand on unmirrored frames, and that it flickers under fast motion.
-- **Latency measurement**: frames carry `t_ms` from the browser source clock. On each prediction, the UI records `now − utterance.end_ms` after the next paint. That figure is "hands at rest → prediction rendered", including the segmenter's hysteresis. p50/p95 are shown in Settings → Hiệu năng (performance).
+- **Latency measurement**: frames carry `t_ms` from the **session clock**, which every source receives in `start()`. Before P3 run 2, camera sources used their own clock, started after model loading, so every sample included the whole start-up time.
+- Each prediction carries `utterance.close_reason` (rest, still, max_duration). The panel counts these so the wait numbers can be read correctly: hands on a desk above the rest line end signs by "still" (1.5 s), not "rest" (0.6 s). On each prediction, the UI records `now − utterance.end_ms` after the next paint. That figure is "hands at rest → prediction rendered", including the segmenter's hysteresis. p50/p95 are shown in Settings → Hiệu năng (performance).
 
 ## 3. Candidate approaches
 

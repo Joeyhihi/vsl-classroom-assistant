@@ -142,6 +142,7 @@ The existing `.gitignore` plus the P1 additions exclude:
 | Backend refuses to start: "mock mode requires VSL_ENV=dev" | Set `VSL_ENV=dev` or choose another `VSL_MODEL_MODE` |
 | Browser console: `StartGraph failed: UNKNOWN: Unable to open zip archive` | The MediaPipe model was missing, and older builds received Vite's `index.html` instead. Run `uv run python scripts/bootstrap.py --with-models --pin` (step 1 of §11) and reload. Since the fix, the app reports "Thiếu tệp MediaPipe" (MediaPipe files missing) with the file names, and `/mediapipe/*` returns 404 when a file is absent. Check that `apps/web/public/mediapipe/holistic_landmarker.task` exists (about 13.7 MB). |
 | `fetch_mediapipe_assets.py`: `PermissionError: [WinError 32]` | Fixed: the script deleted a temp file while it was still open, after wrongly rejecting a valid model. Pull the latest `main` and rerun `bootstrap.py --with-models --pin`. If a `*.task.part` file was left behind in `apps/web/public/mediapipe/`, delete it. |
+| L3: "Xử lý trên máy chủ không khả dụng" (server processing unavailable) | The panel's "Chi tiết" (details) line, the backend's startup warning, and `/api/v1/diagnostics` all give the reason. Usually the backend was started without `--extra server-extraction` (step 6), or `VSL_SERVER_EXTRACTION_ENABLED` is not `true`. |
 | CRLF line-ending warnings | `.gitattributes` normalises them. Run `git add --renormalize .` once if needed. |
 
 ## 11. Phase 3 Windows test procedure {#phase-3-windows-test-procedure}
@@ -154,9 +155,13 @@ Everything below runs **only on the Windows laptop**. Steps 1–3 are setup; ste
 3. **Handedness check** (at L1, L2 and L3). Raise only your **right** hand. In the overlay, your right **arm and hand** must be **orange** and the left green (torso blue). Then move the right hand fast: it must stay orange.
    - Hands are matched to the pose wrists, so if the arm is orange but the hand green (or the reverse), report it.
    - If both arm and hand are swapped, the pose's own left/right is inverted; report that too.
-4. **L1 benchmark.** Run recognition for 5 minutes using the production build (`run_web.py --preview`), signing normally so predictions happen. From Settings → Hiệu năng (performance), record: fps; the three latency rows (processing, wait, total) as p50/p95; inference; source line; JS heap; backend RSS. Also record GPU memory from Task Manager. Targets: **≥15 fps** and **processing ≤ 500 ms p95**.
+4. **L1 benchmark.** Run recognition for 5 minutes using the production build (`run_web.py --preview`), signing normally so predictions happen. From Settings → Hiệu năng (performance), record: fps; the three latency rows (processing, wait, total) as p50/p95; **how signs ended** (lowered / held still / too long); inference; source line; JS heap; backend RSS. Also record GPU memory from Task Manager. Targets: **≥15 fps** and **processing ≤ 500 ms p95**.
 5. **L2 benchmark.** Settings → Mức xử lý hình ảnh (processing level) → L2, then repeat step 4.
-6. **L3 benchmark.** Run `uv sync --extra server-extraction` and set `VSL_SERVER_EXTRACTION_ENABLED=true`. Restart the backend, choose L3, and repeat step 4. (For L3, the fps shown is the rate frames are sent; check that predictions keep up.) If the backend reports `EXTRACTION_UNAVAILABLE`, `/api/v1/diagnostics` gives the reason. The Python HolisticLandmarker API is **unverified**, so report any import or attribute error verbatim.
+6. **L3 benchmark.** Set `VSL_SERVER_EXTRACTION_ENABLED=true` in `.env`, then start the backend **with the extra**:
+   ```powershell
+   uv run --extra server-extraction python scripts/run_backend.py
+   ```
+   A plain `uv run` or `bootstrap.py` re-syncs the environment *without* optional packages, which removes MediaPipe again. The backend prints "L3 server extraction: available" or a warning with the reason. Then choose L3 and repeat step 4. (For L3, the fps shown is the rate frames are sent; check that predictions keep up.) If the backend reports `EXTRACTION_UNAVAILABLE`, `/api/v1/diagnostics` gives the reason. The Python HolisticLandmarker API is **unverified**, so report any import or attribute error verbatim.
 7. **Template classifier on your own signs.**
    1. Set `VITE_ENABLE_RECORDER=true`.
    2. In Ghi mẫu (recorder), record 3–5 of **your own** signs, 3+ takes each, and download the files. Keep them outside the repo.

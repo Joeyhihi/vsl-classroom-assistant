@@ -49,6 +49,15 @@ export function PerformancePanel({ controller, level, onLevelChange }: Props) {
         <p className="hint">{vi.performance.levelHint}</p>
       </div>
       {state.phase !== "running" && <p className="hint">{vi.performance.notRunning}</p>}
+      {controller.ladder.kind === "too_slow" && (
+        <p className="notice notice--warning" role="status" data-testid="settings-ladder-notice">
+          {controller.ladder.next.action === "auto_switch"
+            ? vi.ladder.autoSwitch(controller.ladder.fps)
+            : controller.ladder.next.action === "offer"
+              ? vi.ladder.offerL3(controller.ladder.fps)
+              : vi.ladder.unsupported}
+        </p>
+      )}
       <dl className="components" data-testid="performance-metrics">
         <div className="components__row">
           <dt>{vi.performance.fps}</dt>
@@ -65,6 +74,10 @@ export function PerformancePanel({ controller, level, onLevelChange }: Props) {
             </div>
           );
         })}
+        <div className="components__row" data-testid="close-reasons">
+          <dt>{vi.performance.closeReasons}</dt>
+          <dd>{vi.performance.closeReasonCounts(metrics.closeReasons)}</dd>
+        </div>
         <div className="components__row">
           <dt>{vi.performance.inference}</dt>
           <dd>{fmt(metrics.inferenceMs, "ms", 1)}</dd>

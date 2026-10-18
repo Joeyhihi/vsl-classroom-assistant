@@ -191,7 +191,7 @@ class TranscriptionResponse(BaseModel):
 
 { "type": "prediction", "prediction_id": "p_0012", "model_id": "gru-2027-01-v1",
   "status": "uncertain",                    // confident | uncertain | rejected
-  "utterance": { "start_ms": 10450, "end_ms": 11980, "n_frames": 31 },
+  "utterance": { "start_ms": 10450, "end_ms": 11980, "n_frames": 31, "close_reason": "rest" },  // rest | still | max_duration
   "top": [ { "gloss_id": "VSL_0003", "text_vi": "Xin nhắc lại", "icon": "repeat", "score": 0.58 },
            { "gloss_id": "VSL_0007", "text_vi": "Chậm lại", "icon": "slow", "score": 0.21 },
            { "gloss_id": "VSL_0002", "text_vi": "Cảm ơn", "icon": "thanks", "score": 0.09 } ],

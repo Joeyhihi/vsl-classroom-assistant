@@ -79,6 +79,7 @@ export function RecorderView({ sourceKind, stream, level }: Props) {
           onProcessed: () => undefined,
         },
         spec,
+        () => performance.now(),
       );
       source.current = src;
       meta.current = {

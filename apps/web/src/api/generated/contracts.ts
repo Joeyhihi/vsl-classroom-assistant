@@ -212,6 +212,10 @@ export interface ScoredLabelWire {
  * via the `definition` "UtteranceSpan".
  */
 export interface UtteranceSpan {
+  /**
+   * rest: hands lowered; still: hands held motionless; max_duration: too long
+   */
+  close_reason: "rest" | "still" | "max_duration";
   end_ms: number;
   n_frames: number;
   start_ms: number;

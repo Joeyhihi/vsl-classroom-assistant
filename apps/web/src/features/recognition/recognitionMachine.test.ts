@@ -24,7 +24,7 @@ function prediction(id: string, status: PredictionMessage["status"]): Prediction
     prediction_id: id,
     model_id: "mock",
     status,
-    utterance: { start_ms: 0, end_ms: 1000, n_frames: 15 },
+    utterance: { start_ms: 0, end_ms: 1000, n_frames: 15, close_reason: "rest" },
     top: [{ gloss_id: "A", text_vi: `Chữ ${id}`, icon: "x", score: 0.9 }],
     timings: { hysteresis_ms: 600, inference_ms: 1 },
   };

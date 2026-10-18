@@ -40,6 +40,19 @@ def main() -> int:
         return 2
 
     print(f"backend: http://{settings.host}:{settings.port}  mode={settings.model_mode}")
+    if settings.server_extraction_enabled:
+        from vsl_backend.extraction.server_extractor import extraction_unavailable_reason
+
+        reason = extraction_unavailable_reason(True, settings.holistic_model_path)
+        if reason:
+            # `uv run` / `uv sync` without --extra removes the optional packages again.
+            print(f"WARNING: L3 server extraction unavailable: {reason}", file=sys.stderr)
+            print(
+                "  start with: uv run --extra server-extraction python scripts/run_backend.py",
+                file=sys.stderr,
+            )
+        else:
+            print("L3 server extraction: available")
     uvicorn.run(
         "vsl_backend.main:create_app",
         factory=True,

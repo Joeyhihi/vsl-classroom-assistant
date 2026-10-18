@@ -14,7 +14,7 @@ function prediction(status: PredictionMessage["status"]): PredictionMessage {
     prediction_id: "p_1",
     model_id: "dev",
     status,
-    utterance: { start_ms: 0, end_ms: 1000, n_frames: 15 },
+    utterance: { start_ms: 0, end_ms: 1000, n_frames: 15, close_reason: "rest" },
     top: [
       { gloss_id: "A", text_vi: "Xin chào", icon: "wave", score: 0.62 },
       { gloss_id: "B", text_vi: "Cảm ơn", icon: "thanks", score: 0.25 },
@@ -34,6 +34,7 @@ function controller(state: Partial<RecognitionState>, extra: Partial<Recognition
         wait: { count: 0, p50: null, p95: null },
         processing: { count: 0, p50: null, p95: null },
       },
+      closeReasons: { rest: 0, still: 0, max_duration: 0 },
       inferenceMs: null,
       sourceDetail: "-",
     },

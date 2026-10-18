@@ -60,6 +60,7 @@ class _Track:
     last_active_ms: float = 0.0
     last_moving_ms: float = 0.0
     last_active_index: int = 0
+    last_moving_index: int = 0
 
 
 def _active_wrists(body: BodyFrame | None, rest_line: float) -> list[np.ndarray]:
@@ -127,6 +128,7 @@ class UtteranceSegmenter:
             track.last_active_index = len(track.frames)
             if speed >= cfg.still_speed:
                 track.last_moving_ms = t
+                track.last_moving_index = len(track.frames)
         if t - track.start_ms >= cfg.max_duration_ms:
             return self._close(t, "max_duration")
         if not active and t - track.last_active_ms >= cfg.pause_tolerance_ms:
@@ -143,6 +145,7 @@ class UtteranceSegmenter:
             last_active_ms=t_ms,
             last_moving_ms=t_ms,
             last_active_index=len(frames),
+            last_moving_index=len(frames),
         )
         self._preroll.clear()
         self._candidate_since = None
@@ -156,7 +159,10 @@ class UtteranceSegmenter:
         self._track = None
         self._prev = None
         self.state = "ready"
-        frames = track.frames[: track.last_active_index]
+        # A "still" close ends the unit at the last MOVING frame: the motionless
+        # hold is the wait, not part of the sign (and must not reach the classifier).
+        cut = track.last_moving_index if reason == "still" else track.last_active_index
+        frames = track.frames[:cut]
         end_ms = frames[-1].t_ms if frames else track.start_ms
         if end_ms - track.start_ms < self.config.min_duration_ms:
             return None

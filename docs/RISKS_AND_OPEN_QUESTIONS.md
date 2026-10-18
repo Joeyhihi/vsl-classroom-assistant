@@ -99,3 +99,13 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
   - Results: 20.7 fps; total latency p50 784 ms / p95 1376 ms; inference 1.4 ms; source `L2 main/GPU`, so **the Web Worker path fell back to the main thread**. The worker's error text is now logged to the console as "MediaPipe worker unavailable…"; capture it in the final run.
   - Handedness was flipped, and fast motion flickered. Fixed with pose-wrist matching (see the P3 decision note in ROADMAP).
   - Frames are now sent one by one, and the latency criterion changed to processing ≤ 500 ms p95.
+- **Windows run 2 (L1 worker/GPU 17.0 fps; L2 main/GPU 25.5 fps; L3 unavailable).** Handedness is now correct, with no flicker. The latency numbers were **not trustworthy** because of two measurement bugs, now fixed:
+  - **Separate source clock.** Camera sources used their own clock, started after model loading, so the start-up time was added to every sample. This is why L2's "processing" sat at a flat ~700 ms. All sources now use the session clock.
+  - **"Still" closes.** These reported a 0 ms wait and kept the motionless frames in the unit. With a laptop webcam, hands resting on the desk sit above the rest line, so most signs end by "still" after 1.5 s. Units are now cut at the last moving frame, the wait is measured, and close reasons are counted.
+
+  Also changed:
+  - The L3 error now shows the server's reason, and the backend warns at startup when the `server-extraction` extra is missing. `uv run`/`uv sync` without `--extra` removes it.
+  - The fallback window went from 5 s to 15 s: L1 was auto-switched to L2 after a short dip.
+
+  **Known limitation:** L2 (Hand + Pose, two tasks) cannot run in the module Web Worker. tasks-vision 1.0.1 fails with "ModuleFactory not set" when creating the second task, so L2 uses the main thread. L1 (one Holistic task) runs in the worker. Not fixed: no way to test it on the Mac, and L2 still reached 25.5 fps on the main thread.
+  **Open UX question for P4/P6:** should hands resting on a desk count as "rest"? This decides whether signs end after 0.6 s or 1.5 s. Signer sessions decide it, together with the pause tolerance.

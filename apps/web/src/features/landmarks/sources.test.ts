@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { WireFrame } from "../../api/generated/contracts";
+import type { FeatureSpecWire, WireFrame } from "../../api/generated/contracts";
 import { ReplayLandmarkSource, binaryFrame, type ReplayFile } from "./sources";
 
 const frame = (t: number): WireFrame => ({ t_ms: t, pose: null, left_hand: null, right_hand: null, face: null });
+
+const SPEC: FeatureSpecWire = { version: "fs-1", face_indices: [], shapes: { pose: [33, 4], hand: [21, 3], face: [0, 3] } };
 
 const REPLAY: ReplayFile = {
   format: "vsl-replay-v1",
@@ -20,18 +22,21 @@ afterEach(() => vi.useRealTimers());
 
 describe("ReplayLandmarkSource", () => {
   it("plays in real time and loops with strictly increasing t_ms", async () => {
-    let now = 0;
-    const source = new ReplayLandmarkSource(REPLAY, () => now);
+    let now = 500; // the session clock is already running when the source starts
+    const source = new ReplayLandmarkSource(REPLAY);
     const seen: number[] = [];
     await source.start(
       { onFrame: (f) => seen.push(f.t_ms), onBinary: () => undefined, onProcessed: () => undefined },
+      SPEC,
+      () => now,
     );
     for (let i = 0; i < 30; i++) {
       now += 100;
       vi.advanceTimersByTime(100);
     }
     source.stop();
-    expect(seen.slice(0, 4)).toEqual([0, 100, 200, 1200]); // loop gap of 1 s
+    // Timestamps are on the session clock (offset 500), with a 1 s loop gap.
+    expect(seen.slice(0, 4)).toEqual([500, 600, 700, 1700]);
     expect(seen.every((t, i) => i === 0 || t > (seen[i - 1] as number))).toBe(true);
   });
 });
