@@ -31,7 +31,7 @@
 | Local vi-VN voices on macOS and Windows | **macOS recorded (2026-10-18):** macOS 15.8 + Chrome 155 exposes one Vietnamese voice, "Linh" (`vi-VN`, `localService: true`), in headless and headed mode, with no network Vietnamese voices. **Windows: not yet checked.** | Windows: open Settings → Chẩn đoán in the app on the Acer laptop (P2 exit) |
 | Worker spike: MediaPipe tasks-vision 1.0.1 in a module Web Worker (ES-module WASM loader, GPU delegate) | **Unverified**: code written, never executed (no MediaPipe on the Mac) | P3 Windows step 2 |
 | Python `HolisticLandmarker` API and result shape in mediapipe 1.x (L3) | **Unverified**: the adapter accepts both result shapes; tested only with fakes | P3 Windows step 6 |
-| Left/right-hand convention (Holistic and HandLandmarker handedness on unmirrored frames) | **Unverified**: assumptions documented in `packer.ts` | P3 Windows step 3 |
+| Left/right-hand convention | **L2 checked on Windows (2026-10-18):** HandLandmarker's label names the signer's own hand on unmirrored frames (it was being swapped wrongly) and flickers under fast motion. Fixed by matching hands to the pose wrists. **L1 Holistic and L3: still to check** in the final run, including whether the pose's own left/right is anatomical. | P3 final Windows run, step 3 |
 | Holistic model URL uses `/latest/`, not a fixed version | Mitigated by sha256 pinning on first fetch (trust on first use) | P3 Windows step 1 |
 | Backend RSS in mock mode | **Measured on the M1 (2026-10-18): about 46 MB** for the Python process, plus about 24 MB for the `uv run` wrapper | Re-measure in P3 with the WS endpoint |
 | Vietnamese data-protection applicability | Not reviewed | B2 |
@@ -95,3 +95,7 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
   2. **Deleting an open file.** The rejection path called `unlink()` inside the `with` block that still held the file open. macOS allows that; Windows refuses. Removing and renaming now happen only after every handle is closed, with a short retry (5 attempts, growing delay) for antivirus locks on new files.
 
   Regression tests simulate Windows' "cannot delete an open file" rule, and fail against the old script.
+- **Windows run 1 (L2, mock, GTX 1650).**
+  - Results: 20.7 fps; total latency p50 784 ms / p95 1376 ms; inference 1.4 ms; source `L2 main/GPU`, so **the Web Worker path fell back to the main thread**. The worker's error text is now logged to the console as "MediaPipe worker unavailable…"; capture it in the final run.
+  - Handedness was flipped, and fast motion flickered. Fixed with pose-wrist matching (see the P3 decision note in ROADMAP).
+  - Frames are now sent one by one, and the latency criterion changed to processing ≤ 500 ms p95.

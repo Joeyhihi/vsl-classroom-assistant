@@ -5,6 +5,7 @@
 import type { FeatureSpecWire, WireFrame } from "../../api/generated/contracts";
 import type { ExtractionLevel } from "../metrics/ladder";
 import type { MediaPipeAssets } from "./assets";
+import { HandAssigner } from "./handAssigner";
 import { packHandPose, packHolistic } from "./packer";
 
 export type Delegate = "GPU" | "CPU";
@@ -34,6 +35,8 @@ export async function createRunner(
     return bytes;
   };
 
+  const assigner = new HandAssigner(); // keeps left/right stable across frames
+
   for (const delegate of ["GPU", "CPU"] as const) {
     try {
       if (level === "L1") {
@@ -43,7 +46,7 @@ export async function createRunner(
         });
         return {
           delegate,
-          detect: (image, tMs) => packHolistic(holistic.detectForVideo(image, tMs), spec, tMs),
+          detect: (image, tMs) => packHolistic(holistic.detectForVideo(image, tMs), spec, tMs, assigner),
           close: () => holistic.close(),
         };
       }
@@ -64,6 +67,7 @@ export async function createRunner(
             { hands: hands.detectForVideo(image, tMs), pose: pose.detectForVideo(image, tMs) },
             spec,
             tMs,
+            assigner,
           ),
         close: () => {
           hands.close();

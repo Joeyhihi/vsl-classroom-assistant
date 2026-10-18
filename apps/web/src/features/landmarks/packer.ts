@@ -2,6 +2,7 @@
 // (ADR-009: the browser never hard-codes landmark indices or shapes).
 
 import type { FeatureSpecWire, WireFrame } from "../../api/generated/contracts";
+import type { HandAssigner } from "./handAssigner";
 
 export interface LandmarkLike {
   x: number;
@@ -40,18 +41,29 @@ function rows(list: LandmarkLike[] | undefined, n: number, withVisibility: boole
   return list.slice(0, n).map((lm) => point(lm, withVisibility));
 }
 
-export function packHolistic(result: HolisticLike, spec: FeatureSpecWire, tMs: number): WireFrame {
+export function packHolistic(
+  result: HolisticLike,
+  spec: FeatureSpecWire,
+  tMs: number,
+  assigner: HandAssigner,
+): WireFrame {
   const [poseN] = spec.shapes.pose as [number, number];
   const [handN] = spec.shapes.hand as [number, number];
   const face = result.faceLandmarks[0];
   const maxIndex = Math.max(...spec.face_indices);
+  const pose = result.poseLandmarks[0];
+  // Holistic's own left/right naming is not trusted: hands are re-assigned to the
+  // pose wrists (see handAssigner.ts), which also stops left/right flicker.
+  const detected = [
+    { landmarks: result.leftHandLandmarks[0], label: "Left" },
+    { landmarks: result.rightHandLandmarks[0], label: "Right" },
+  ].filter((h): h is { landmarks: LandmarkLike[]; label: string } => !!h.landmarks && h.landmarks.length >= handN);
+  const hands = assigner.assign(detected, pose);
   return {
     t_ms: Math.round(tMs * 10) / 10,
-    pose: rows(result.poseLandmarks[0], poseN, true),
-    // UNVERIFIED (P3 Windows calibration): MediaPipe Holistic "left" is the
-    // signer's anatomical left when the frame is not mirrored.
-    left_hand: rows(result.leftHandLandmarks[0], handN, false),
-    right_hand: rows(result.rightHandLandmarks[0], handN, false),
+    pose: rows(pose, poseN, true),
+    left_hand: rows(hands.left, handN, false),
+    right_hand: rows(hands.right, handN, false),
     face:
       face && face.length > maxIndex
         ? spec.face_indices.map((i) => point(face[i] as LandmarkLike, false))
@@ -59,28 +71,24 @@ export function packHolistic(result: HolisticLike, spec: FeatureSpecWire, tMs: n
   };
 }
 
-/**
- * MediaPipe hand "handedness" assumes a mirrored (selfie) image. Our frames are
- * unmirrored, so the label is swapped. UNVERIFIED until the P3 Windows test.
- */
-export const HANDEDNESS_LABELS_ASSUME_MIRRORED = true;
-
-export function packHandPose(result: HandPoseLike, spec: FeatureSpecWire, tMs: number): WireFrame {
+export function packHandPose(
+  result: HandPoseLike,
+  spec: FeatureSpecWire,
+  tMs: number,
+  assigner: HandAssigner,
+): WireFrame {
   const [poseN] = spec.shapes.pose as [number, number];
   const [handN] = spec.shapes.hand as [number, number];
-  let left: LandmarkLike[] | undefined;
-  let right: LandmarkLike[] | undefined;
-  result.hands.landmarks.forEach((landmarks, i) => {
-    const label = result.hands.handedness[i]?.[0]?.categoryName;
-    const isLeft = HANDEDNESS_LABELS_ASSUME_MIRRORED ? label === "Right" : label === "Left";
-    if (isLeft) left ??= landmarks;
-    else right ??= landmarks;
-  });
+  const pose = result.pose.landmarks[0];
+  const detected = result.hands.landmarks
+    .map((landmarks, i) => ({ landmarks, label: result.hands.handedness[i]?.[0]?.categoryName }))
+    .filter((h) => h.landmarks.length >= handN);
+  const hands = assigner.assign(detected, pose);
   return {
     t_ms: Math.round(tMs * 10) / 10,
-    pose: rows(result.pose.landmarks[0], poseN, true),
-    left_hand: rows(left, handN, false),
-    right_hand: rows(right, handN, false),
+    pose: rows(pose, poseN, true),
+    left_hand: rows(hands.left, handN, false),
+    right_hand: rows(hands.right, handN, false),
     face: null,
   };
 }

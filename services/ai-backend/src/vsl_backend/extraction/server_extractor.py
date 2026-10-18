@@ -9,8 +9,9 @@ on the Windows laptop only. It is imported lazily so the default backend (and
 the M1 Mac) never loads it.
 
 UNVERIFIED until the Windows P3 run: the exact Python HolisticLandmarker API in
-mediapipe 1.x and its left/right-hand convention. `_landmark_rows` accepts both
-"list of landmarks" and "list of lists" result shapes.
+mediapipe 1.x. `_landmark_rows` accepts both "list of landmarks" and "list of
+lists" result shapes. Left/right does not rely on MediaPipe's naming: hands are
+re-assigned to the pose wrists by `vsl_features.handedness.HandAssigner`.
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ from numpy.typing import NDArray
 
 from vsl_features import FEATURE_SPEC, FeatureSpec
 from vsl_features.frames import Frame, FrameError
+from vsl_features.handedness import DetectedHand, HandAssigner
 
 # t_ms uint64, width uint16, height uint16, 4 reserved bytes (little-endian).
 BINARY_HEADER = struct.Struct("<QHH4x")
@@ -85,7 +87,12 @@ def _landmark_rows(value: Any) -> Sequence[Any] | None:
     return first if isinstance(first, list | tuple) else value
 
 
-def result_to_frame(result: Any, t_ms: float, spec: FeatureSpec = FEATURE_SPEC) -> Frame:
+def result_to_frame(
+    result: Any,
+    t_ms: float,
+    spec: FeatureSpec = FEATURE_SPEC,
+    assigner: HandAssigner | None = None,
+) -> Frame:
     def array(rows: Sequence[Any] | None, n: int, with_visibility: bool) -> np.ndarray | None:
         if rows is None or len(rows) < n:
             return None
@@ -105,17 +112,13 @@ def result_to_frame(result: Any, t_ms: float, spec: FeatureSpec = FEATURE_SPEC) 
     if face_rows is not None and len(face_rows) > max(spec.face_indices):
         face = array([face_rows[i] for i in spec.face_indices], len(spec.face_indices), False)
     n_hand = spec.hand_shape[0]
-    return Frame(
-        t_ms=t_ms,
-        pose=pose,
-        left_hand=array(
-            _landmark_rows(getattr(result, "left_hand_landmarks", None)), n_hand, False
-        ),
-        right_hand=array(
-            _landmark_rows(getattr(result, "right_hand_landmarks", None)), n_hand, False
-        ),
-        face=face,
-    )
+    detected = [
+        DetectedHand(hand, label)
+        for attr, label in (("left_hand_landmarks", "Left"), ("right_hand_landmarks", "Right"))
+        if (hand := array(_landmark_rows(getattr(result, attr, None)), n_hand, False)) is not None
+    ]
+    left, right = (assigner or HandAssigner()).assign(detected, pose)
+    return Frame(t_ms=t_ms, pose=pose, left_hand=left, right_hand=right, face=face)
 
 
 def mediapipe_available() -> bool:
@@ -163,6 +166,7 @@ class ServerLandmarkExtractor:
     ) -> None:
         self._landmarker = landmarker_factory(model_path)
         self._decoder = decoder
+        self._assigner = HandAssigner()  # keeps left/right stable across frames
         self._last_ts = -1
 
     def extract(self, frame: BinaryFrame) -> Frame:
@@ -171,4 +175,4 @@ class ServerLandmarkExtractor:
         ts = max(int(frame.t_ms), self._last_ts + 1)
         self._last_ts = ts
         result = self._landmarker.detect_for_video(image, ts)
-        return result_to_frame(result, frame.t_ms)
+        return result_to_frame(result, frame.t_ms, assigner=self._assigner)

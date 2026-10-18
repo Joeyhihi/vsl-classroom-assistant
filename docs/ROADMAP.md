@@ -68,10 +68,15 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
 - **Status (2026-10-18):** everything that can run without a camera or model is built and tested on the Mac: vsl-features, WS + handshake, segmenter, template classifier (tested on synthetic data), contracts generation, replay e2e (full stack, mock backend), recorder, metrics, ladder logic, L3 server extractor (tested with fakes). The MediaPipe extractors (L1/L2, worker spike) and the real L3 extractor are written but **have never executed**; that is the Windows step in [CROSS_PLATFORM_SETUP.md §11](CROSS_PLATFORM_SETUP.md#phase-3-windows-test-procedure).
 - **Exit criteria:**
   - Replay E2E passes in CI.
-  - Measured on Windows at each ladder level: **≥15 fps** and **≤1.0 s p95** from rest to rendered.
+  - Measured on Windows at each ladder level: **≥15 fps** and **processing latency ≤ 500 ms p95**. Processing = total − the segmenter's deliberate wait; see the decision note below. Total and wait are recorded too.
   - Memory and VRAM recorded.
   - The ADR-002 level is decided per machine.
   - If no level reaches 15 fps, the machine is documented as manual-only and the owner decides whether to continue.
+
+- **Decision (2026-10-18, owner):** the P3 latency criterion changed from "≤ 1.0 s p95 hands-at-rest → rendered" to **processing ≤ 500 ms p95**.
+  - Why: the first Windows run (L2, mock) gave total p95 1376 ms / p50 784 ms with 1.4 ms inference. About 600 ms of every total is the pause tolerance, which is a deliberate UX parameter, not hardware cost.
+  - The pause tolerance will be tuned with Deaf signers in the P4 pilot and P6.
+- **Windows run 1 findings (fixed):** handedness was flipped at L2, and a fast right hand flickered to "left". Hands are now matched to the pose wrists. Frames were batched (up to ~100 ms added); they are now sent one by one.
 
 ### P4: Data tooling (requires B1 + B2)
 - **Deliverables:**

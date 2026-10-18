@@ -23,12 +23,26 @@ export type SourceKind = "camera" | "replay";
 export const FEATURE_SPEC_VERSION = "fs-1";
 const MAX_RECONNECTS = 5;
 
+export interface LatencySummary {
+  count: number;
+  p50: number | null;
+  p95: number | null;
+}
+
+/**
+ * total      = hands at rest → prediction rendered
+ * wait       = the segmenter's deliberate pause tolerance (server hysteresis_ms)
+ * processing = total − wait: closing frame captured → extracted → sent → classified
+ *              → rendered. P3 hardware criterion: processing p95 ≤ 500 ms.
+ */
 export interface SessionMetrics {
   fps: number | null;
-  latency: { count: number; p50: number | null; p95: number | null };
+  latency: { total: LatencySummary; wait: LatencySummary; processing: LatencySummary };
   inferenceMs: number | null;
   sourceDetail: string;
 }
+
+const EMPTY_LATENCY: LatencySummary = { count: 0, p50: null, p95: null };
 
 interface Options {
   sourceKind: SourceKind;
@@ -41,7 +55,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
   const [state, dispatch] = useReducer(recognitionReducer, initialRecognitionState);
   const [metrics, setMetrics] = useState<SessionMetrics>({
     fps: null,
-    latency: { count: 0, p50: null, p95: null },
+    latency: { total: EMPTY_LATENCY, wait: EMPTY_LATENCY, processing: EMPTY_LATENCY },
     inferenceMs: null,
     sourceDetail: "-",
   });
@@ -53,7 +67,12 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
   const activeLevel = useRef<ExtractionLevel>(level);
   const reconnect = useRef<(() => void) | null>(null);
   const fpsMeter = useRef(new FpsMeter());
-  const latency = useRef(new SampleStats());
+  const latency = useRef({ total: new SampleStats(), wait: new SampleStats(), processing: new SampleStats() });
+  const latencySummary = () => ({
+    total: latency.current.total.summary(),
+    wait: latency.current.wait.summary(),
+    processing: latency.current.processing.summary(),
+  });
 
   const teardown = useCallback(() => {
     runRef.current?.stop();
@@ -128,7 +147,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
             const now = performance.now();
             const fps = fpsMeter.current.fps(now);
             if (monitor) setLadder(monitor.observe(now, fps));
-            setMetrics((m) => ({ ...m, fps, sourceDetail: source.detail, latency: latency.current.summary() }));
+            setMetrics((m) => ({ ...m, fps, sourceDetail: source.detail, latency: latencySummary() }));
           }, 1000);
           break;
         case "status":
@@ -138,8 +157,12 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
           dispatch({ type: "prediction", message });
           // "Hands at rest → prediction rendered": measured after the next paint.
           requestAnimationFrame(() => {
-            latency.current.add(sourceNow() - message.utterance.end_ms);
-            setMetrics((m) => ({ ...m, inferenceMs: message.timings.inference_ms, latency: latency.current.summary() }));
+            const total = sourceNow() - message.utterance.end_ms;
+            const wait = message.timings.hysteresis_ms;
+            latency.current.total.add(total);
+            latency.current.wait.add(wait);
+            latency.current.processing.add(Math.max(0, total - wait));
+            setMetrics((m) => ({ ...m, inferenceMs: message.timings.inference_ms, latency: latencySummary() }));
           });
           break;
         case "error":
@@ -194,7 +217,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
       wantRunning.current = true;
       attempt.current = 0;
       activeLevel.current = levelOverride ?? level;
-      latency.current.reset();
+      Object.values(latency.current).forEach((s) => s.reset());
       setLadder({ kind: "measuring" });
       void connect(activeLevel.current);
     },
