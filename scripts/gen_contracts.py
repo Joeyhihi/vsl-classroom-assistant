@@ -32,6 +32,16 @@ from vsl_backend.schemas.recognition import (
     VocabularyResponse,
 )
 from vsl_backend.schemas.recognition import Pong as PongMessage
+from vsl_backend.schemas.recordings import (
+    RecorderConfig,
+    ReviewCreate,
+    SampleCreateContract,
+    SampleFrames,
+    SampleList,
+    SampleSummary,
+    SessionCreate,
+    SessionCreated,
+)
 
 OUTPUT = WEB_DIR / "src" / "api" / "generated" / "contracts.ts"
 
@@ -51,6 +61,14 @@ MODELS: list[type[BaseModel]] = [
     ErrorMessage,
     SessionStopped,
     PongMessage,
+    RecorderConfig,
+    SessionCreate,
+    SessionCreated,
+    SampleCreateContract,
+    SampleSummary,
+    SampleList,
+    SampleFrames,
+    ReviewCreate,
 ]
 
 

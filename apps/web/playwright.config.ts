@@ -1,7 +1,14 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4173;
 const BACKEND_PORT = 8765; // separate from a developer backend on 8000
+// Recorder e2e data goes to a fresh temp dir, never into the repository.
+const E2E_DATA_ROOT = process.env.VSL_E2E_DATA_ROOT ?? mkdtempSync(join(tmpdir(), "vsl-e2e-data-"));
+process.env.VSL_E2E_DATA_ROOT = E2E_DATA_ROOT; // workers re-load this config: keep one dir
 const isCI = !!process.env.CI;
 
 // Locally we drive the installed Google Chrome (no extra browser download on
@@ -33,7 +40,12 @@ export default defineConfig({
       command: `uv run python scripts/run_backend.py --mock --port ${BACKEND_PORT}`,
       cwd: "../..",
       url: `http://127.0.0.1:${BACKEND_PORT}/api/v1/health`,
-      env: { VSL_ALLOWED_ORIGINS: `http://localhost:${PORT}`, VSL_ENV: "dev" },
+      env: {
+        VSL_ALLOWED_ORIGINS: `http://localhost:${PORT}`,
+        VSL_ENV: "dev",
+        VSL_RECORDER_ENABLED: "true",
+        VSL_DATA_ROOT: E2E_DATA_ROOT,
+      },
       reuseExistingServer: !isCI,
       timeout: 120_000,
     },

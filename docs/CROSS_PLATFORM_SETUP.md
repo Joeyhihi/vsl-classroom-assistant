@@ -90,6 +90,9 @@ uv sync --extra server-extraction                     # optional L3 server-side 
 | `VSL_MAX_SESSION_S` | `7200` | WS session cap |
 | `VSL_HOLISTIC_MODEL_PATH` | `apps/web/public/mediapipe/holistic_landmarker.task` | Model for L3 server extraction |
 | `VSL_COOLDOWN_MS` | `1500` | Duplicate-prediction suppression window |
+| `VSL_RECORDER_ENABLED` | `false` | Phase 4 recorder and review endpoints (needs `VITE_ENABLE_RECORDER=true` for the tabs) |
+| `VSL_THIRD_PARTY_RECORDING_ENABLED` | `false` | **Keep false until B2 is approved.** While false, only consent `SELF` with a `DEV-..` signer ID is accepted. |
+| `VSL_DEV_VOCABULARY_PATH` | `ml/vocabulary/vocabulary.dev.json` | Prompts for the recorder (placeholder, developer-only) |
 | `VSL_LOG_LEVEL` | `INFO` | Logging |
 | `VITE_API_BASE` | `/api/v1` | Proxied to the backend by Vite in dev |
 | `VITE_LANDMARK_SOURCE` | `replay` | `camera` or `replay`. Must be `camera` on Windows for real tests. |
@@ -137,6 +140,17 @@ The existing `.gitignore` plus the P1 additions exclude:
 ### Live check after tuning (P4 exit for segmentation)
 
 Run recognition at L2 for about 5 minutes. **Between signs, leave your hands resting visibly on the desk** (the case that used to run to 4 s). Then read Settings → Hiệu năng (performance) → "Ký hiệu kết thúc do" (how signs ended). Pass: "quá dài" (too long) is no longer the most common reason, and no units start while your hands rest. Also report the wait p50/p95.
+
+## 8b. Phase 4 workflow: record → review → report → templates {#phase-4-workflow}
+
+1. In `.env`, set `VSL_RECORDER_ENABLED=true`, `VITE_ENABLE_RECORDER=true` and `VITE_LANDMARK_SOURCE=camera`. Optionally set `VSL_DATA_ROOT` to a folder **outside** the repo (default: the user-data folder). Restart both servers.
+2. **Ghi mẫu** (record): start a session (`DEV-01`, consent `SELF`, conditions), choose an item, record 3 s or 6 s takes. Each take is saved by the backend to `DATA_ROOT/landmarks/…`, with a row in `DATA_ROOT/manifests/samples.jsonl`. No downloads.
+3. **Duyệt mẫu** (review): replay each sample's skeleton, then accept, reject (with a reason) or relabel.
+4. Report: `uv run python scripts/dataset_report.py`, saved to `DATA_ROOT/reports/`.
+5. Templates from accepted samples: `uv run python scripts/build_templates.py --model-id dev-02 --from-manifest`. Then set `VSL_MODEL_MODE=template` and `VSL_SIGN_MODEL_ID=dev-02` and test live.
+6. Delete: `uv run python scripts/delete_recordings.py --session <id>`, which is a dry run; add `--yes` to delete.
+
+To rename the placeholder signs, edit `ml/vocabulary/vocabulary.dev.json` (`text_vi`). Keep the `DEV_xx` IDs, or re-record.
 
 ## 9. End-to-end tests (Playwright)
 

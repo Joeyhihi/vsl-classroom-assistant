@@ -20,16 +20,17 @@ import { vi } from "./i18n/vi";
 import { CommunicationView } from "./views/CommunicationView";
 import { PrivacyView } from "./views/PrivacyView";
 import { RecorderView } from "./views/RecorderView";
+import { ReviewView } from "./views/ReviewView";
 import { SettingsView } from "./views/SettingsView";
 
-type View = "communicate" | "settings" | "privacy" | "record";
+type View = "communicate" | "settings" | "privacy" | "record" | "review";
 
 // Build-time switches (.env, docs/CROSS_PLATFORM_SETUP.md §5).
 const SOURCE_KIND: SourceKind = import.meta.env.VITE_LANDMARK_SOURCE === "replay" ? "replay" : "camera";
 const RECORDER_ENABLED = import.meta.env.VITE_ENABLE_RECORDER === "true";
 const MIN_FPS = Number(import.meta.env.VITE_MIN_FPS) || 15;
 const VIEWS: readonly View[] = RECORDER_ENABLED
-  ? ["communicate", "settings", "privacy", "record"]
+  ? ["communicate", "settings", "privacy", "record", "review"]
   : ["communicate", "settings", "privacy"];
 
 export function App() {
@@ -168,6 +169,7 @@ export function App() {
         {view === "record" && RECORDER_ENABLED && (
           <RecorderView sourceKind={SOURCE_KIND} stream={stream} level={settings.extractionLevel} />
         )}
+        {view === "review" && RECORDER_ENABLED && <ReviewView />}
       </main>
     </div>
   );

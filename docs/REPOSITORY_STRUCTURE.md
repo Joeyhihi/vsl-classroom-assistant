@@ -86,6 +86,9 @@ vsl-classroom-assistant/
 | `guard_no_media.py` | Fails if tracked files include media, model, or dataset files, or anything over the size limit | P1 |
 | `gen_contracts.py` | Pydantic → JSON Schema → TypeScript (single pipeline; `--check` in check.py) | P3 |
 | `gen_synthetic_replay.py` | Writes `apps/web/public/replay/synthetic-replay-v1.json` from `vsl_features.synth` | P3 |
+| `_dataset.py` | Resolves `DATA_ROOT` like the backend; refuses paths inside the repo | P4 |
+| `delete_recordings.py` | Delete by signer/session/sample (dry run unless `--yes`), tombstones | P4 |
+| `dataset_report.py` | Dataset quality report (aggregates only) → `DATA_ROOT/reports/` | P4 |
 | `analyze_segmentation.py` | Recorder takes → wrist speed/height stats, current segmenter behaviour, suggested thresholds (P4 tuning) | P3/P4 |
 | `build_templates.py` | Recorder exports (developer's own signs) or `--synthetic` → template model in `model-artifacts/` | P3 |
 | `mediapipe_assets.json` | Model URLs + pinned sha256 (trust-on-first-use, written on Windows) | P3 |
@@ -100,7 +103,7 @@ There is deliberately no combined launcher. The frontend and backend always run 
 |---|---|---|
 | `src/main.tsx`, `App.tsx` | Entry point; view state (communicate, settings, privacy, guide, record) with no router | P1 shell, P2 |
 | `src/app/ErrorBoundary.tsx` | Catches render errors and shows a reload screen (logs the component stack only) | P2 |
-| `src/views/` | `CommunicationView`, `SettingsView`, `PrivacyView` (P2); `RecorderView` (P3 minimal, P4 full); `SignGuideView`, `LargeDisplayView` (P6) | P2+ |
+| `src/views/` | `CommunicationView`, `SettingsView`, `PrivacyView` (P2); `RecorderView` (P3 minimal, P4 sessions + upload), `ReviewView` (P4); `SignGuideView`, `LargeDisplayView` (P6) | P2+ |
 | `src/components/` | `camera/` (CameraPanel, CameraPreview, CameraSelector), `transcript/` (TranscriptPanel), `compose/` (ManualTextInput), `speech/` (TtsStatus), `system/` (ConnectionBanner, BackendStatus), `ui/` (StatusLine) in P2; `recognition/` from P3 | P2+ |
 | `src/features/` | Hooks and logic: `health/` (P1, backend status polling), `camera/`, `landmarks/`, `recognition/`, `transcript/`, `tts/`, `settings/`, `recorder/` (P3), `stt/` (P7) | P2+ |
 | `src/api/` | `http.ts`, `ws.ts` (RecognitionSocket: batching, heartbeat, close codes), `types.ts` (health runtime guard), `generated/contracts.ts` (generated, committed) | P1+ |
@@ -135,6 +138,7 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | `recognition/session.py`, `pipeline.py` | Transport-free session protocol (unit-tested) and frames → utterance → classifier → cooldown | P3 |
 | `api/v1/recognition_ws.py`, `api/v1/models.py` | WS transport (Origin check, heartbeat, threadpool for L3); vocabulary, models, feature-spec, diagnostics | P3 |
 | `inference/template_model.py` | Template model save/load/calibrate (no pickle) | P3 |
+| `recording/service.py`, `api/v1/recordings.py` | Recorder sessions, sample ingest, review (P4; off unless enabled) | P4 |
 | `extraction/server_extractor.py` | L3 server-side MediaPipe (optional extra) | P3 spike |
 | `inference/model_registry.py`, `resource_manager.py` | Artifact checks; heavy-model policy | P3 / P6–P7 |
 | `speech/stt_engine.py`, `audio_validation.py` | faster-whisper wrapper, WAV validation | P7 |
@@ -150,6 +154,8 @@ There is no backend TTS module in the MVP (ADR-010).
 |---|---|
 | `spec.py` | `FeatureSpec` (version, landmark subsets, exact shapes, face indices), served to the client |
 | `dtw.py` | DTW distance for the template classifier |
+| `dataset.py` | `DATA_ROOT` storage, append-only manifest, consent rule (P4) |
+| `vocabulary.py` | Vocabulary JSON loader (P4) |
 | `synth.py` | Deterministic synthetic signer for fixtures and tests |
 | `frames.py` | Frame validation, presence masks |
 | `normalize.py` | Shoulder-centred, shoulder-width scaling, aspect-ratio correction, wrist-relative hands, mirroring |

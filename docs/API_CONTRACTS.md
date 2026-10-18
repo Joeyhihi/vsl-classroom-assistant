@@ -32,6 +32,8 @@
 | `MODEL_UNAVAILABLE` | 503 | No usable sign model |
 | `RESOURCE_EXHAUSTED` | 503 | The RAM or VRAM guard refused to load a model |
 | `STT_UNAVAILABLE` | 503 | STT is disabled or failed |
+| `RECORDER_DISABLED` | 403 | Recorder off, or `DATA_ROOT` invalid (reason given) |
+| `CONSENT_REQUIRED` | 403 | Consent rule refused the session |
 | `INTERNAL` | 500 | Unexpected error. The log has details; the response never echoes the payload. |
 
 The frontend maps each `code` to a Vietnamese message in `apps/web/src/i18n/vi.ts`. Every response carries an `X-Request-ID` header.
@@ -44,6 +46,12 @@ The frontend maps each `code` to a Vietnamese message in `apps/web/src/i18n/vi.t
 | GET | `/api/v1/vocabulary` | P3 | — | `VocabularyResponse` `{vocabulary_version, entries:[{gloss_id, text_vi, icon}]}`. Internal `__*__` classes are excluded. 503 `MODEL_UNAVAILABLE` without a model. |
 | GET | `/api/v1/models` | P3 | — | `ModelInfo` `{model_id, kind: mock\|template-dtw\|onnx, vocabulary_version, feature_spec_version, developer_only}`. When `developer_only` is true the UI shows a badge. |
 | GET | `/api/v1/feature-spec` | P3 | — | `FeatureSpecWire`, the same object as in `session.started`. Used by the recorder, which has no WS session. |
+| GET | `/api/v1/recordings/config` | P4 | — | `RecorderConfig`: `{enabled, reason, third_party_allowed, data_root, vocabulary_version, developer_only_vocabulary, items[]}` |
+| POST | `/api/v1/recordings/sessions` | P4 | `SessionCreate` | 201 `{session_id, signer_id}`. 403 `CONSENT_REQUIRED` unless consent is `SELF` with a `DEV-..` signer (until B2); 403 `RECORDER_DISABLED` when off |
+| POST | `/api/v1/recordings/sessions/{id}/samples` | P4 | `{label, take_ms, frames[]}` (≤ 600 frames, 2 MB body limit) | 201 `SampleSummary`. Frames validated one by one; < 50 % valid → 422 |
+| GET | `/api/v1/recordings/samples?status=&session_id=` | P4 | — | `SampleList` (current view: latest review, deletions hidden) |
+| GET | `/api/v1/recordings/samples/{id}/frames` | P4 | — | `SampleFrames` (for the review replay) |
+| POST | `/api/v1/recordings/samples/{id}/review` | P4 | `{status: accepted\|rejected\|relabelled, reviewer, reject_reason?, relabel_to?}` | `SampleSummary` |
 | GET | `/api/v1/diagnostics` | P3 | — | `{rss_mb, python_version, platform, model, server_extraction:{available, reason}}` for the performance panel. |
 | POST | `/api/v1/feedback` | P6 | `FeedbackCreate` | 201 `{feedback_id}` |
 | DELETE | `/api/v1/feedback` | P6 | — | 204 (deletes all local feedback) |

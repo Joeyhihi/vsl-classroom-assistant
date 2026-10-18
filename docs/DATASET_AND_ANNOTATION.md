@@ -77,6 +77,15 @@ There are about 2× as many distractor signs as vocabulary items. They are chose
 4. Output goes to `DATA_ROOT/landmarks/<signer_id>/<session_id>/<sample_id>.npz` plus one manifest row. Raw `.webm` is saved **only** if scope 2 was ticked, and is encrypted.
 5. The **realistic subset** is recorded in classroom-like conditions and belongs to the test set.
 
+## 4a. Implementation (Phase 4, 2026-10-18)
+
+- **Storage** (`vsl_features.dataset`): `DATA_ROOT/landmarks/<signer>/<session>/<sample>.npz` contains fixed-shape arrays with presence masks, no pickle. Files are written to a temp file and renamed, with Windows lock retries.
+- **Append-only manifests:** `samples.jsonl`, `reviews.jsonl` and `tombstones.jsonl`. Nothing is rewritten. The current state is the sample row plus its latest review, with tombstoned samples excluded.
+- **Consent rule, in code:** only `SELF` consent with a `DEV-..` signer ID, until B2 is approved (`VSL_THIRD_PARTY_RECORDING_ENABLED`). IDs must be pseudonymous. A `DATA_ROOT` inside a git checkout is refused.
+- **Vocabulary:** `ml/vocabulary/vocabulary.dev.json` is a **placeholder, developer-only** list (DEV_01–03, DST_01 distractor, REST_DESK/LAP/DOWN and HOLD background). It is JSON rather than YAML, to avoid a dependency; the validated B1 vocabulary will use the same item fields.
+- **Schema:** `ml/metadata/manifest.schema.json`, with a synthetic `manifest.example.jsonl`. A test keeps both in sync with `SampleRecord`.
+- **Tools:** recorder v2 and the review view (web), `dataset_report.py`, `delete_recordings.py`, and `build_templates.py --from-manifest` (accepted targets only).
+
 ## 5. Manifest (JSONL, stored in `DATA_ROOT/manifests/`, never in git)
 
 Fields: `sample_id, signer_id, session_id, gloss_id | distractor_id, variant_id, sample_kind (target|distractor|background), dominant_hand, signing_region (only with consent), lighting, background, camera, distance, fps, n_frames, image_w, image_h, feature_spec_version, extractor_version, extractor_backend, consent_id, consent_scopes, quality_flags, annotator_id, review_status (pending|accepted|rejected|relabelled), reject_reason, collected_at, dataset_version`.

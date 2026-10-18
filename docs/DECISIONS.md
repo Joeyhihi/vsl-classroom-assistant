@@ -140,6 +140,20 @@ Status values: **Accepted**, **Provisional** (needs measurement or validation), 
 - **Trade-offs:** CPU STT is slower, which is acceptable for push-to-talk segments.
 - **Revisit when:** P7 measurements show CPU latency is unacceptable and VRAM headroom is proven.
 
+## ADR-017: Append-only dataset manifest, backend ingest, consent rule in code — Accepted (provisional where marked)
+- **Context:** Phase 4 needs recordings that are reviewable, deletable and auditable, while only the developer may be recorded until B2.
+- **Decision:**
+  - Recordings go browser → localhost backend → `DATA_ROOT` (`.npz` plus `samples.jsonl`).
+  - Reviews and deletions are **append-only event files** (`reviews.jsonl`, `tombstones.jsonl`). The current state is a fold over them.
+  - The consent rule lives in `vsl_features.dataset.check_consent`: `SELF` with a `DEV-..` signer only, while `VSL_THIRD_PARTY_RECORDING_ENABLED` is false.
+  - A `DATA_ROOT` inside a git checkout is refused.
+- **Trade-offs:**
+  - Append-only files grow, but stay small at MVP scale and keep a full history, which is useful for withdrawal audits.
+  - No database is needed (ADR-012).
+  - In-memory sessions are lost on a backend restart; the user simply starts a new session.
+- **Revisit when:** multiple reviewers (inter-annotator agreement), much larger datasets, or B2 approval adds consent-register integration.
+- **Provisional:** the backend-ingest choice and the dev vocabulary were taken while the owner was away (see the ROADMAP P4 notes).
+
 ## ADR-016: Separate start scripts and dev-only mock model mode — Accepted
 - **Context:** the M1 cannot comfortably run the browser, MediaPipe, the IDE, the Vite dev server, and models together. The owner requires separate start scripts. A combined launcher uses the same memory, but it prevents running only one side.
 - **Decision:**

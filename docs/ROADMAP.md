@@ -94,9 +94,28 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - A separate bug was fixed: hands were compared without labels, so one hand vanishing while the other appeared looked like fast motion.
   - Tuning uses `scripts/analyze_segmentation.py` on the owner's own recorder takes.
 
-### P4: Data tooling (requires B1 + B2)
+### P4: Data tooling (requires B1 + B2) — current: tools built 2026-10-18 (PR pending review)
 
 - **Owner decision (2026-10-18):** the tools are built *before* B1/B2, and only the developer records themselves. Recording anyone else still requires B1 + B2.
+- **Tasks and status:**
+
+  | # | Task | Status |
+  |---|---|---|
+  | 4.0 | Segmentation tuning: live Windows check | Implemented (PR #9); **live check pending** |
+  | 4.1 | Storage + append-only manifest + schema + consent rule + dev vocabulary | Done |
+  | 4.2 | Recorder ingest API → `DATA_ROOT` | Done |
+  | 4.3 | Recorder v2 (session, vocabulary prompts, 3/6 s takes) | Done |
+  | 4.4 | Review view (replay, accept/reject/relabel) | Done |
+  | 4.5 | Deletion script (dry run, tombstones) | Done |
+  | 4.6 | Quality report | Done |
+  | 4.7 | Templates from accepted manifest samples, plus a live test on own signs | Code done; **Windows live test pending** |
+
+- **Decisions taken autonomously (2026-10-18; the owner was away, review and change if needed):**
+  1. The backend writes recordings into `DATA_ROOT`; there are no browser downloads.
+  2. Consent `SELF` for `DEV-..` signer IDs only; every other ID is refused in code until B2.
+  3. The dev vocabulary is a placeholder (`DEV_01`–`03` "Ký hiệu thử N"). Rename `text_vi` in `ml/vocabulary/vocabulary.dev.json`.
+  4. The recorder's label lock was replaced by sessions and item selection. Each take is labelled at upload, so mislabelling is no longer possible.
+- **Exit (self-recording version):** one full session recorded, reviewed, reported, templates built from it and run live on Windows; deletion verified; third-party recording blocked in code (tests); no data in the repo (guard plus a `DATA_ROOT` check).
 - **First task: segmentation tuning — implemented 2026-10-18, live check pending.**
   - Data (1 take per label, L2): resting hands visible at y ≈ 0.6 shoulder widths below the shoulders (inside the frame, above the old 1.2 line); raised hold at 0.37–0.40; signing at ≤ 0.18. Active-wrist jitter p95 ≤ 0.34; signing p95 ≥ 1.75.
   - New defaults: rest line 0.45, start 1.0, still 0.7 (smoothed, 150 ms), per-hand speed.
