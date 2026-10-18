@@ -5,8 +5,15 @@ import { vi } from "../../i18n/vi";
 
 const WIDTH = 320;
 const HEIGHT = 240;
-const POSE_LINKS: [number, number][] = [
-  [11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24],
+// Signer's left = green, right = orange (arms and hands), torso = blue: raising
+// the right hand must turn the right arm AND hand orange (P3 handedness check).
+const LEFT_COLOUR = "#6dd58c";
+const RIGHT_COLOUR = "#ffb95c";
+const TORSO_COLOUR = "#8ab4f8";
+const POSE_LINKS: [number, number, string][] = [
+  [11, 12, TORSO_COLOUR], [11, 23, TORSO_COLOUR], [12, 24, TORSO_COLOUR], [23, 24, TORSO_COLOUR],
+  [11, 13, LEFT_COLOUR], [13, 15, LEFT_COLOUR],
+  [12, 14, RIGHT_COLOUR], [14, 16, RIGHT_COLOUR],
 ];
 const HAND_CHAINS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 9, 10, 11, 12], [0, 13, 14, 15, 16], [0, 17, 18, 19, 20]];
 
@@ -26,12 +33,16 @@ function draw(ctx: CanvasRenderingContext2D, frame: WireFrame | null) {
     ctx.stroke();
   };
   ctx.lineWidth = 3;
-  ctx.strokeStyle = "#8ab4f8";
-  if (frame.pose) for (const [a, b] of POSE_LINKS) line(frame.pose[a], frame.pose[b]);
+  if (frame.pose) {
+    for (const [a, b, colour] of POSE_LINKS) {
+      ctx.strokeStyle = colour;
+      line(frame.pose[a], frame.pose[b]);
+    }
+  }
   ctx.lineWidth = 2;
   for (const [hand, colour] of [
-    [frame.left_hand, "#6dd58c"],
-    [frame.right_hand, "#ffb95c"],
+    [frame.left_hand, LEFT_COLOUR],
+    [frame.right_hand, RIGHT_COLOUR],
   ] as const) {
     if (!hand) continue;
     ctx.strokeStyle = colour;

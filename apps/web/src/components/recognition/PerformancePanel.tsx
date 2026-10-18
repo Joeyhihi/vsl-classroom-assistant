@@ -54,12 +54,17 @@ export function PerformancePanel({ controller, level, onLevelChange }: Props) {
           <dt>{vi.performance.fps}</dt>
           <dd>{fmt(metrics.fps, "fps", 1)}</dd>
         </div>
-        <div className="components__row">
-          <dt>{vi.performance.latency}</dt>
-          <dd>
-            {fmt(metrics.latency.p50, "ms")} / {fmt(metrics.latency.p95, "ms")} (n={metrics.latency.count})
-          </dd>
-        </div>
+        {(["processing", "wait", "total"] as const).map((key) => {
+          const s = metrics.latency[key];
+          return (
+            <div key={key} className="components__row" data-testid={`latency-${key}`}>
+              <dt>{vi.performance.latencyRows[key]}</dt>
+              <dd>
+                {fmt(s.p50, "ms")} / {fmt(s.p95, "ms")} (n={s.count})
+              </dd>
+            </div>
+          );
+        })}
         <div className="components__row">
           <dt>{vi.performance.inference}</dt>
           <dd>{fmt(metrics.inferenceMs, "ms", 1)}</dd>

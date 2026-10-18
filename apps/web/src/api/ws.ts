@@ -45,7 +45,10 @@ export interface SocketOptions {
   pingMs: number;
 }
 
-const DEFAULT_OPTIONS: SocketOptions = { batchSize: 4, flushMs: 100, pingMs: 5000 };
+// Each frame is sent as soon as it is extracted (batch of 1): on localhost the
+// extra messages cost nothing, and batching added up to ~100 ms of latency.
+// The flush timer only drains frames queued while the socket was opening.
+const DEFAULT_OPTIONS: SocketOptions = { batchSize: 1, flushMs: 100, pingMs: 5000 };
 
 export function recognitionUrl(location: Location = window.location): string {
   const scheme = location.protocol === "https:" ? "wss" : "ws";

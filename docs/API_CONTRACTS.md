@@ -149,6 +149,7 @@ class TranscriptionResponse(BaseModel):
 
 - **Lifecycle:** connect (Origin checked) → `session.start` → `session.started` → stream → `session.stop` → `session.stopped`. **Each connection is exactly one session.** After a reconnect the client starts a new session.
 - **Heartbeat:** the client sends `ping` every 5 s. If nothing arrives for 15 s, the server closes with 4004.
+- **Batching:** the client sends each frame as soon as it is extracted (a batch of 1). Batching added up to ~100 ms of latency in Windows run 1. The server still accepts up to 8 frames per batch.
 - **Limits:** a JSON message is at most 64 KB. A batch holds at most 8 frames. At most 30 frames/s (20 in L3). A session lasts at most `VSL_MAX_SESSION_S`, default 7200.
 
 ### Client → server

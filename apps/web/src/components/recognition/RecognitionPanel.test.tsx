@@ -27,7 +27,16 @@ function prediction(status: PredictionMessage["status"]): PredictionMessage {
 function controller(state: Partial<RecognitionState>, extra: Partial<RecognitionController> = {}): RecognitionController {
   return {
     state: { ...initialRecognitionState, ...state },
-    metrics: { fps: null, latency: { count: 0, p50: null, p95: null }, inferenceMs: null, sourceDetail: "-" },
+    metrics: {
+      fps: null,
+      latency: {
+        total: { count: 0, p50: null, p95: null },
+        wait: { count: 0, p50: null, p95: null },
+        processing: { count: 0, p50: null, p95: null },
+      },
+      inferenceMs: null,
+      sourceDetail: "-",
+    },
     ladder: { kind: "measuring" },
     lastFrame: { current: null },
     start: vitest.fn(),

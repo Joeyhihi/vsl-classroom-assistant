@@ -19,7 +19,7 @@ This document separates **confirmed requirements** (stated by the project owner)
 |---|---|---|---|
 | FR-1 | Webcam access and permission handling | P2 | Permission is requested only after a user action. The *denied*, *no camera*, and *camera in use* states each show a Vietnamese explanation and a recovery step. |
 | FR-2 | Camera preview and recognition status | P2–P3 | The preview is mirrored. The status shows text, an icon, and colour for: waiting for hands, ready, signing, processing, paused. |
-| FR-3 | Near-real-time recognition of supported message units | P3–P5 | Measured on Windows: ≥15 fps landmarks, and ≤1.0 s p95 from *hands at rest* to *prediction rendered*. |
+| FR-3 | Near-real-time recognition of supported message units | P3–P5 | Measured on Windows: ≥15 fps landmarks, and **processing latency ≤ 500 ms p95**. Processing latency runs from the frame that closes the sign to the prediction rendered. Total latency (hands at rest → rendered) = processing + the deliberate pause tolerance (600 ms default, tuned with Deaf signers in P4/P6). |
 | FR-4 | Vietnamese text output | P3 | Each prediction shows `text_vi` at ≥32 px together with an icon or category. |
 | FR-5 | Optional Vietnamese TTS | P2 | Uses only local `vi-VN` browser voices (`localService === true`). If no such voice exists, the Speak button is disabled and an install guide is shown. |
 | FR-6 | Confirmation before speech | P3/P6 | Nothing is spoken and nothing is added to the transcript unless the user explicitly confirms. Auto-speak is off by default. |

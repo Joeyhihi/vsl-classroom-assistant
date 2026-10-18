@@ -40,7 +40,12 @@ test("replay: handshake, segmentation, candidate policy, confirm without speech 
   await page.getByRole("button", { name: "Cài đặt" }).click();
   const metrics = page.getByTestId("performance-metrics");
   await expect(metrics).toContainText(/1\d\.\d fps/);
-  await expect(metrics).toContainText(/n=3/);
+  // Breakdown: processing (P3 criterion), the deliberate wait, and the total.
+  for (const key of ["processing", "wait", "total"]) {
+    await expect(page.getByTestId(`latency-${key}`)).toContainText("(n=3)");
+  }
+  const waitText = await page.getByTestId("latency-wait").textContent();
+  expect(Number(/(\d+) ms/.exec(waitText ?? "")?.[1])).toBeGreaterThanOrEqual(600); // pause tolerance
 
   await page.getByRole("button", { name: "Giao tiếp" }).click();
   await page.getByRole("button", { name: "Dừng nhận dạng" }).click();

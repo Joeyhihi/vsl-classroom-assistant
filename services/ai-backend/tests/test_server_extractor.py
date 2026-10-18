@@ -66,8 +66,16 @@ class Lm:
     visibility: float | None = None
 
 
-def landmarks(n: int, vis: float | None = None) -> list[Lm]:
-    return [Lm(0.5 + i * 1e-3, 0.4, 0.0, vis) for i in range(n)]
+def landmarks(n: int, vis: float | None = None, x: float = 0.5) -> list[Lm]:
+    return [Lm(x + i * 1e-3, 0.4, 0.0, vis) for i in range(n)]
+
+
+def pose_with_wrists(vis: float | None = 0.9) -> list[Lm]:
+    """Signer's left wrist (15) on the image's right, right wrist (16) on the left."""
+    pose = landmarks(33, vis)
+    pose[15] = Lm(0.7, 0.5, 0.0, vis)
+    pose[16] = Lm(0.3, 0.5, 0.0, vis)
+    return pose
 
 
 @dataclass
@@ -83,7 +91,9 @@ def test_result_to_frame_accepts_both_result_shapes(nested: bool) -> None:
     def wrap(items: list[Lm]) -> object:
         return [items] if nested else items
 
-    result = FakeResult(wrap(landmarks(33, 0.9)), [], wrap(landmarks(21)), wrap(landmarks(478)))
+    result = FakeResult(
+        wrap(pose_with_wrists()), [], wrap(landmarks(21, x=0.3)), wrap(landmarks(478))
+    )
     frame = result_to_frame(result, 10.0)
 
     assert (
@@ -123,3 +133,11 @@ def test_unavailable_reasons(tmp_path: Path) -> None:
     assert "disabled" in (extraction_unavailable_reason(False, tmp_path) or "")
     # mediapipe is never installed on the dev Mac or in CI (optional extra).
     assert "mediapipe" in (extraction_unavailable_reason(True, tmp_path / "x.task") or "")
+
+
+def test_hands_follow_the_pose_wrists_not_mediapipe_naming() -> None:
+    # MediaPipe called the hand near the signer's RIGHT wrist "left": geometry wins.
+    result = FakeResult(pose_with_wrists(), landmarks(21, x=0.31), [], [])
+    frame = result_to_frame(result, 0.0)
+    assert frame.left_hand is None
+    assert frame.right_hand is not None and frame.right_hand[0, 0] == pytest.approx(0.31)

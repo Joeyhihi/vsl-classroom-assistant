@@ -204,7 +204,11 @@ export const vi = {
     },
     levelHint: "Thay đổi có hiệu lực từ lần bắt đầu nhận dạng tiếp theo.",
     fps: "Tốc độ điểm mốc",
-    latency: "Độ trễ hạ tay → hiển thị (p50 / p95)",
+    latencyRows: {
+      processing: "Xử lý sau khi kết thúc ký hiệu (p50 / p95; mục tiêu p95 ≤ 500 ms)",
+      wait: "Chờ xác nhận kết thúc ký hiệu (cố ý, p50 / p95)",
+      total: "Tổng: hạ tay → hiển thị (p50 / p95)",
+    },
     inference: "Thời gian suy luận",
     source: "Nguồn / chế độ",
     dropped: "Khung hình bị loại",

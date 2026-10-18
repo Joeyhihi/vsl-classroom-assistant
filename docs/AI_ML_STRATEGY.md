@@ -43,6 +43,7 @@
   The ring buffer is the segmenter's own bounded track and pre-roll; there is no separate `buffer.py`. Mirroring augmentation is deferred to P5 (`ml/augment.py`) because it needs expert approval per item.
 - **Template classifier**: DTW (Sakoe-Chiba band 25%), nearest template per class, softmax over −distance with a temperature, then the decision policy. Calibration (`calibrate()`) is a dev heuristic from leave-one-out template distances, **not** a G5 calibration.
 - **Synthetic signer** (`vsl_features/synth.py`): three made-up motion patterns (not VSL) that drive the replay fixture and the tests.
+- **Handedness**: hands are matched to the pose wrists (pose 15 = signer's left, 16 = right), then to last frame's positions, and only then to MediaPipe's label (`handAssigner.ts`, `vsl_features/handedness.py` for L3). Windows run 1 showed the L2 label already names the signer's own hand on unmirrored frames, and that it flickers under fast motion.
 - **Latency measurement**: frames carry `t_ms` from the browser source clock. On each prediction, the UI records `now − utterance.end_ms` after the next paint. That figure is "hands at rest → prediction rendered", including the segmenter's hysteresis. p50/p95 are shown in Settings → Hiệu năng (performance).
 
 ## 3. Candidate approaches
@@ -77,7 +78,10 @@ All MVP models are expected to be a few MB or less and to run on CPU through onn
 3. Record backend RSS (`doctor.py`) and Task Manager GPU memory.
 4. Save a Markdown report to `DATA_ROOT/reports/benchmarks/` (outside the repo). A summary table with no personal data goes into the PR.
 
-**P3 thresholds (approved):** ≥15 fps; ≤1.0 s p95 from rest to rendered.
+**P3 thresholds (revised 2026-10-18, approved):**
+- ≥15 fps.
+- **Processing latency ≤ 500 ms p95.** Processing = (hands at rest → rendered) − the segmenter's wait (`hysteresis_ms`). The performance panel shows processing, wait and total separately.
+- Total latency is reported but not gated, because about 600 ms of it is the deliberate pause tolerance; its value is a UX decision for the P4/P6 signer sessions.
 
 ## 6. Hardware policy
 
