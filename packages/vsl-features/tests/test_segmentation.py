@@ -100,3 +100,13 @@ def test_still_hold_ends_at_the_last_moving_frame() -> None:
     assert u.reason == "still"
     assert u.end_ms <= last.t_ms  # the motionless hold is not part of the unit
     assert 1400 <= u.hysteresis_ms <= 1700  # the wait is reported, not 0
+
+
+def test_one_hand_vanishing_while_the_other_appears_is_not_motion() -> None:
+    """Regression: unlabelled wrist lists compared the left hand with the right."""
+    from vsl_features.segmentation import wrist_speed
+
+    left = np.array([0.8, 0.0])
+    right = np.array([-0.8, 0.0])
+    assert wrist_speed((0.0, {"left": left}), 66.7, {"right": right}) == 0.0
+    assert wrist_speed((0.0, {"left": left}), 100.0, {"left": left + 0.1}) > 0.0

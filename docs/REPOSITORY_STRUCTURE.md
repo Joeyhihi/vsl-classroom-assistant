@@ -86,6 +86,7 @@ vsl-classroom-assistant/
 | `guard_no_media.py` | Fails if tracked files include media, model, or dataset files, or anything over the size limit | P1 |
 | `gen_contracts.py` | Pydantic → JSON Schema → TypeScript (single pipeline; `--check` in check.py) | P3 |
 | `gen_synthetic_replay.py` | Writes `apps/web/public/replay/synthetic-replay-v1.json` from `vsl_features.synth` | P3 |
+| `analyze_segmentation.py` | Recorder takes → wrist speed/height stats, current segmenter behaviour, suggested thresholds (P4 tuning) | P3/P4 |
 | `build_templates.py` | Recorder exports (developer's own signs) or `--synthetic` → template model in `model-artifacts/` | P3 |
 | `mediapipe_assets.json` | Model URLs + pinned sha256 (trust-on-first-use, written on Windows) | P3 |
 | `_common.py` | Shared stdlib helpers for the scripts (tool lookup, subprocess) | P1 |

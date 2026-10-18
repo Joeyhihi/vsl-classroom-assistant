@@ -56,7 +56,7 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - E2E tests pass with the backend both up and down.
 - **Risk:** no local Vietnamese voice on Windows. The fallback is text plus the large display; backend TTS stays out of the MVP.
 
-### P3: Walking skeleton (the smallest end-to-end prototype) — current: built on the Mac, Windows measurements pending
+### P3: Walking skeleton ✅ (closed 2026-10-18, owner decision)
 - **Deliverables:**
   - `packages/vsl-features` (spec, normalise, buffer, segmenter, decoding);
   - WS endpoint with the `feature_spec` handshake; `ReplayLandmarkSource`;
@@ -78,7 +78,26 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
   - The pause tolerance will be tuned with Deaf signers in the P4 pilot and P6.
 - **Windows run 1 findings (fixed):** handedness was flipped at L2, and a fast right hand flickered to "left". Hands are now matched to the pose wrists. Frames were batched (up to ~100 ms added); they are now sent one by one.
 
+- **Final results (Windows, GTX 1650, `--preview`, mock model, run 3):**
+
+  | Level | fps | Processing p50 / p95 | Wait p50 / p95 | Total p50 / p95 | Signs ended by (lowered · still · too long) | Source | JS heap |
+  |---|---|---|---|---|---|---|---|
+  | L1 | 12.4 ❌ | 77 / 84 ms ✅ | 0 / 653 ms | 77 / 737 ms | 1 · 0 · 7 | L1 worker/GPU | 34 MB |
+  | **L2** | **22.8 ✅** | **141 / 146 ms ✅** | 0 / 601 ms | 146 / 668 ms | 1 · 0 · 6 | L2 main/GPU | 49 MB |
+  | L3 | not executed | | | | | (run showed `L1 worker/GPU`) | |
+
+- **Exit decision:** the criterion is met by **L2**, which is the working level for the GTX 1650 laptop. L1 met it in run 2 (17.0 fps) but not in run 3, and L2 has no face landmarks.
+  - **L3** is recorded as **set up correctly but never executed**: the backend reports the extractor as available, but the benchmark session ran at L1. This is option (b), the owner's decision.
+- **Carried into P4 (first task):**
+  - 26 of 31 signs ended by **max duration (4 s)**, so the segmenter rarely detected the real end of a sign on webcam data.
+  - Likely causes: resting hands sit above the rest line, and tracker jitter exceeds the 0.15 "still" threshold.
+  - A separate bug was fixed: hands were compared without labels, so one hand vanishing while the other appeared looked like fast motion.
+  - Tuning uses `scripts/analyze_segmentation.py` on the owner's own recorder takes.
+
 ### P4: Data tooling (requires B1 + B2)
+
+- **Owner decision (2026-10-18):** the tools are built *before* B1/B2, and only the developer records themselves. Recording anyone else still requires B1 + B2.
+- **First task: segmentation tuning.** Record REST_DESK / REST_LAP / REST_DOWN / HOLD / 3 own signs (5 takes each, L2), run `scripts/analyze_segmentation.py`, and set the segmenter thresholds (plus smoothing, if the data supports it) from the results. Exit: no false starts on rest takes, every sign take starts, and "too long" is no longer the dominant close reason on a rerun.
 - **Deliverables:**
   - full recorder with consent ID, manifest, and condition tags;
   - manifest schema and validator;
