@@ -14,13 +14,21 @@ export interface FrameSink {
   onProcessed: () => void;
 }
 
+/** Milliseconds since the session started. One clock for frame timestamps and latency. */
+export type SessionClock = () => number;
+
 export interface LandmarkSource {
   readonly kind: "replay" | "camera" | "server";
   readonly imageWidth: number;
   readonly imageHeight: number;
   /** Diagnostics: "worker"/"main" + delegate for camera, "-" otherwise. */
   readonly detail: string;
-  start(sink: FrameSink, spec: FeatureSpecWire): Promise<void>;
+  /**
+   * Frame `t_ms` values MUST come from `clock`, the same clock the session uses to
+   * measure latency (a separate source clock started after model loading added the
+   * whole start-up time to every latency sample: Windows P3 run 2).
+   */
+  start(sink: FrameSink, spec: FeatureSpecWire, clock: SessionClock): Promise<void>;
   stop(): void;
 }
 
@@ -55,10 +63,7 @@ export class ReplayLandmarkSource implements LandmarkSource {
   readonly detail = "replay";
   private timer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(
-    private readonly replay: ReplayFile,
-    private readonly clock: () => number = () => performance.now(),
-  ) {}
+  constructor(private readonly replay: ReplayFile) {}
 
   get imageWidth() {
     return this.replay.image_width;
@@ -68,15 +73,15 @@ export class ReplayLandmarkSource implements LandmarkSource {
     return this.replay.image_height;
   }
 
-  async start(sink: FrameSink): Promise<void> {
+  async start(sink: FrameSink, _spec: FeatureSpecWire, clock: SessionClock): Promise<void> {
     const frames = this.replay.frames;
     const duration = (frames[frames.length - 1] as WireFrame).t_ms + LOOP_GAP_MS;
-    const t0 = this.clock();
+    const t0 = clock(); // fixture times are offset onto the session clock
     let index = 0;
     let loop = 0;
     const tick = () => {
       const frame = frames[index] as WireFrame;
-      const t = loop * duration + frame.t_ms;
+      const t = t0 + loop * duration + frame.t_ms;
       sink.onFrame({ ...frame, t_ms: Math.round(t * 10) / 10 });
       sink.onProcessed();
       index += 1;
@@ -85,7 +90,7 @@ export class ReplayLandmarkSource implements LandmarkSource {
         loop += 1;
       }
       const next = loop * duration + (frames[index] as WireFrame).t_ms;
-      this.timer = setTimeout(tick, Math.max(0, next - (this.clock() - t0)));
+      this.timer = setTimeout(tick, Math.max(0, next - (clock() - t0)));
     };
     this.timer = setTimeout(tick, 0);
   }
@@ -159,16 +164,15 @@ export class CameraLandmarkSource implements LandmarkSource {
     return this.extractor ? `${this.level} ${this.extractor.mode}/${this.extractor.delegate}` : this.level;
   }
 
-  async start(sink: FrameSink, spec: FeatureSpecWire): Promise<void> {
+  async start(sink: FrameSink, spec: FeatureSpecWire, clock: SessionClock): Promise<void> {
     this.video = await hiddenVideo(this.stream);
     this.extractor = await createExtractor(this.level, spec);
-    const t0 = performance.now();
     let busy = false; // back-pressure: drop camera frames while one is processing
     this.stopLoop = frameLoop(this.video, () => {
       if (busy || !this.extractor || !this.video) return;
       busy = true;
       this.extractor
-        .detect(this.video, performance.now() - t0)
+        .detect(this.video, clock())
         .then((frame) => {
           sink.onFrame(frame);
           sink.onProcessed();
@@ -223,12 +227,11 @@ export class ServerExtractionSource implements LandmarkSource {
     return Math.min(SERVER_MAX_HEIGHT, this.stream.getVideoTracks()[0]?.getSettings().height ?? 480);
   }
 
-  async start(sink: FrameSink): Promise<void> {
+  async start(sink: FrameSink, _spec: FeatureSpecWire, clock: SessionClock): Promise<void> {
     this.video = await hiddenVideo(this.stream);
     const canvas = new OffscreenCanvas(this.imageWidth, this.imageHeight);
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("no 2d context");
-    const t0 = performance.now();
     let last = -Infinity;
     let busy = false;
     this.stopLoop = frameLoop(this.video, () => {
@@ -238,7 +241,7 @@ export class ServerExtractionSource implements LandmarkSource {
       last = now;
       // Drawn unmirrored: the server sees the same orientation as browser extraction.
       ctx.drawImage(this.video, 0, 0, canvas.width, canvas.height);
-      const tMs = now - t0;
+      const tMs = clock();
       canvas
         .convertToBlob({ type: "image/jpeg", quality: SERVER_JPEG_QUALITY })
         .then((blob) => blob.arrayBuffer())

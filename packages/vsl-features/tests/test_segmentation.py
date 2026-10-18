@@ -83,3 +83,20 @@ def test_trailing_rest_frames_are_excluded() -> None:
     frames, truth = synth_session(["SYN_B"], seed=7)
     (u,) = run(frames)
     assert u.frames[-1].t_ms == u.end_ms <= truth[0][2] + 1
+
+
+def test_still_hold_ends_at_the_last_moving_frame() -> None:
+    """Hands resting ABOVE the rest line (e.g. on a desk in a laptop webcam view)."""
+    rng = np.random.default_rng(8)
+    sign = synth_sign("SYN_A", 1000, 15, rng)
+    pattern = sign[: len(sign) - 6]  # stop before the hands are lowered
+    last = pattern[-1]
+    hold = [
+        Frame(last.t_ms + 66.7 * (i + 1), last.pose, last.left_hand, last.right_hand, last.face)
+        for i in range(40)  # ~2.7 s motionless, hands up
+    ]
+    (u,) = run(synth_rest(0, 1000, 15, rng) + pattern + hold)
+
+    assert u.reason == "still"
+    assert u.end_ms <= last.t_ms  # the motionless hold is not part of the unit
+    assert 1400 <= u.hysteresis_ms <= 1700  # the wait is reported, not 0

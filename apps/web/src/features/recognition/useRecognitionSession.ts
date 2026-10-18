@@ -35,14 +35,19 @@ export interface LatencySummary {
  * processing = total − wait: closing frame captured → extracted → sent → classified
  *              → rendered. P3 hardware criterion: processing p95 ≤ 500 ms.
  */
+export type CloseReason = "rest" | "still" | "max_duration";
+
 export interface SessionMetrics {
   fps: number | null;
   latency: { total: LatencySummary; wait: LatencySummary; processing: LatencySummary };
+  /** How each sign ended: tells whether "wait" reflects lowering the hands or holding still. */
+  closeReasons: Record<CloseReason, number>;
   inferenceMs: number | null;
   sourceDetail: string;
 }
 
 const EMPTY_LATENCY: LatencySummary = { count: 0, p50: null, p95: null };
+const NO_CLOSES: Record<CloseReason, number> = { rest: 0, still: 0, max_duration: 0 };
 
 interface Options {
   sourceKind: SourceKind;
@@ -56,6 +61,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
   const [metrics, setMetrics] = useState<SessionMetrics>({
     fps: null,
     latency: { total: EMPTY_LATENCY, wait: EMPTY_LATENCY, processing: EMPTY_LATENCY },
+    closeReasons: NO_CLOSES,
     inferenceMs: null,
     sourceDetail: "-",
   });
@@ -129,6 +135,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
                 onProcessed: () => fpsMeter.current.tick(performance.now()),
               },
               message.feature_spec,
+              sourceNow,
             )
             .then(() => {
               if (source.kind !== "replay") monitor = new LadderMonitor(lvl, performance.now(), { ...DEFAULT_LADDER, minFps });
@@ -162,13 +169,20 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
             latency.current.total.add(total);
             latency.current.wait.add(wait);
             latency.current.processing.add(Math.max(0, total - wait));
-            setMetrics((m) => ({ ...m, inferenceMs: message.timings.inference_ms, latency: latencySummary() }));
+            const reason = message.utterance.close_reason;
+            setMetrics((m) => ({
+              ...m,
+              inferenceMs: message.timings.inference_ms,
+              latency: latencySummary(),
+              closeReasons: { ...m.closeReasons, [reason]: m.closeReasons[reason] + 1 },
+            }));
           });
           break;
         case "error":
           if (message.fatal) {
             fatalSeen = true;
-            dispatch({ type: "failed", reason: message.code });
+            // The server's message carries the specific reason (e.g. why L3 is unavailable).
+            dispatch({ type: "failed", reason: message.code, detail: message.message });
           }
           break;
         default:
@@ -218,6 +232,7 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
       attempt.current = 0;
       activeLevel.current = levelOverride ?? level;
       Object.values(latency.current).forEach((s) => s.reset());
+    setMetrics((m) => ({ ...m, closeReasons: NO_CLOSES }));
       setLadder({ kind: "measuring" });
       void connect(activeLevel.current);
     },

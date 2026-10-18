@@ -159,6 +159,9 @@ class UtteranceSpan(_Out):
     start_ms: float
     end_ms: float
     n_frames: int
+    close_reason: Literal["rest", "still", "max_duration"] = Field(
+        description="rest: hands lowered; still: hands held motionless; max_duration: too long"
+    )
 
 
 class PredictionTimings(_Out):

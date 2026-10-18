@@ -67,6 +67,7 @@ class RecognitionPipeline:
                 start_ms=utterance.start_ms,
                 end_ms=utterance.end_ms,
                 n_frames=len(utterance.frames),
+                close_reason=utterance.reason,
             ),
             top=[
                 ScoredLabelWire(gloss_id=s.gloss_id, text_vi=s.text_vi, icon=s.icon, score=s.score)

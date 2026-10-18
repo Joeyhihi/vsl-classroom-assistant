@@ -13,7 +13,9 @@ export interface LadderConfig {
   windowMs: number;
 }
 
-export const DEFAULT_LADDER: LadderConfig = { minFps: 15, warmupMs: 3000, windowMs: 5000 };
+// 15 s window: a short dip (L1 averaged 17 fps on the GTX 1650 in P3 run 2) must
+// not give up L1's face features.
+export const DEFAULT_LADDER: LadderConfig = { minFps: 15, warmupMs: 3000, windowMs: 15_000 };
 
 export type LadderVerdict =
   | { kind: "measuring" }

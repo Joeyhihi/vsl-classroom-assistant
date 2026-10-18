@@ -210,6 +210,9 @@ export const vi = {
       total: "Tổng: hạ tay → hiển thị (p50 / p95)",
     },
     inference: "Thời gian suy luận",
+    closeReasons: "Ký hiệu kết thúc do",
+    closeReasonCounts: (c: { rest: number; still: number; max_duration: number }) =>
+      `hạ tay ${c.rest} · giữ yên ${c.still} · quá dài ${c.max_duration}`,
     source: "Nguồn / chế độ",
     dropped: "Khung hình bị loại",
     heap: "Bộ nhớ JavaScript",
