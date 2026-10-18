@@ -1,0 +1,24 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Node.js
+node_modules/
+dist/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# AI models and private datasets
+model-artifacts/*
+!model-artifacts/README.md
+ml/datasets/*
+!ml/datasets/README.md
+
+# OS / editor
+.DS_Store
+.vscode/
