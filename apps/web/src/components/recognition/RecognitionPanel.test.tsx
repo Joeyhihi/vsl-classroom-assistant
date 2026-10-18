@@ -99,6 +99,18 @@ describe("RecognitionPanel", () => {
     expect(screen.getByTestId("recognition-status")).toHaveTextContent(text as string);
   });
 
+  it("missing MediaPipe assets: says what to run and which files are missing", () => {
+    renderPanel(
+      controller({
+        phase: "failed",
+        failure: "MEDIAPIPE_ASSETS_MISSING",
+        failureDetail: "holistic_landmarker.task",
+      }),
+    );
+    expect(screen.getByTestId("recognition-status")).toHaveTextContent("bootstrap.py --with-models --pin");
+    expect(screen.getByTestId("failure-detail")).toHaveTextContent("holistic_landmarker.task");
+  });
+
   it("ladder offer calls onAcceptL3; replay badge is shown", () => {
     const c = controller(
       { phase: "running" },

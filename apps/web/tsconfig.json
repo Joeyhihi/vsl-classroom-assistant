@@ -17,5 +17,5 @@
     "noUncheckedIndexedAccess": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts", "eslint.config.js"]
+  "include": ["src", "e2e", "vite.config.ts", "playwright.config.ts", "vite.mediapipe-guard.ts", "eslint.config.js"]
 }

@@ -90,6 +90,11 @@ export function RecognitionPanel({ controller, sourceKind, onConfirm, onAcceptL3
 
       <div role="status" aria-live="polite" data-testid="recognition-status">
         {line ? <StatusLine tone={line.tone} text={line.text} /> : <p className="hint">{vi.recognition.idleHint}</p>}
+        {state.phase === "failed" && state.failureDetail && (
+          <p className="hint mono" data-testid="failure-detail">
+            {vi.recognition.failureDetail(state.failureDetail)}
+          </p>
+        )}
       </div>
 
       {active && <LandmarkOverlay frameRef={controller.lastFrame} />}

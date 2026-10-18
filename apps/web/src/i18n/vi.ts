@@ -163,11 +163,13 @@ export const vi = {
     failure: {
       NO_CAMERA: "Hãy bật camera trước khi nhận dạng.",
       REPLAY_UNAVAILABLE: "Không tải được dữ liệu phát lại.",
-      EXTRACTOR_FAILED:
-        "Không khởi động được bộ nhận dạng điểm mốc (MediaPipe). Trên Windows, hãy chạy bootstrap.py --with-models.",
+      EXTRACTOR_FAILED: "Không khởi động được bộ nhận dạng điểm mốc (MediaPipe).",
+      MEDIAPIPE_ASSETS_MISSING:
+        "Thiếu tệp MediaPipe trên máy này. Chạy: uv run python scripts/bootstrap.py --with-models --pin, rồi tải lại trang.",
       BACKEND_UNREACHABLE: "Không kết nối được máy chủ sau nhiều lần thử.",
     } as Record<string, string>,
     failureGeneric: "Nhận dạng đã dừng do lỗi.",
+    failureDetail: (detail: string) => `Chi tiết: ${detail}`,
     replayBadge: "PHÁT LẠI TỔNG HỢP",
     replayNotice:
       "Đang dùng dữ liệu phát lại tổng hợp — không phải camera và không phải ký hiệu VSL thật.",

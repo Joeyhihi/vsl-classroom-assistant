@@ -68,3 +68,10 @@ test("no network requests leave localhost (privacy)", async ({ page }) => {
 
   expect(external).toEqual([]);
 });
+
+test("missing MediaPipe assets are a 404, not the SPA fallback page", async ({ request }) => {
+  // CI and the Mac never have the models; Vite used to answer index.html (HTTP 200).
+  const response = await request.get("/mediapipe/holistic_landmarker.task");
+  expect(response.status()).toBe(404);
+  expect(await response.text()).toContain("bootstrap.py --with-models");
+});

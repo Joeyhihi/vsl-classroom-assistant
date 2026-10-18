@@ -83,3 +83,10 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
 - **uvicorn had no WebSocket implementation.** FastAPI's `TestClient` does not need one, so pytest passed while the real server answered the upgrade with 404. The full-stack Playwright test caught it. `websockets` is now an explicit dependency, with a regression test.
 - **Segmenter pre-roll at low fps.** At 10 fps the first moving frames were cut off. Fixed by measuring the pre-roll from the candidate start, with tests at 10/15/30 fps.
 - **L3 fps is the send rate**, not the server's processing rate. If the server falls behind, frames queue on the socket (sends are skipped above 512 KB buffered). Watch prediction latency during the Windows L3 benchmark.
+- **"Unable to open zip archive" on Windows (first P3 run).** Vite's SPA fallback answered missing `/mediapipe/*` files with `index.html` (HTTP 200), and MediaPipe tried to open it as a `.task` zip. Fixed in four places:
+  - a Vite plugin returns 404 for missing MediaPipe assets in dev and preview;
+  - the browser checks the WASM files and the zip signature of each model before creating any task;
+  - models are passed to MediaPipe as buffers (`modelAssetBuffer`), so the worker resolves no model paths;
+  - the UI names the missing files and the command to run.
+
+  `fetch_mediapipe_assets.py` also refuses to save a non-zip download. Upstream URLs were checked with HEAD requests on 2026-10-18 (holistic 13.7 MB, hand 7.8 MB, pose lite 5.8 MB).
