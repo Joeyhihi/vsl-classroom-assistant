@@ -26,8 +26,11 @@ SYNTHETIC_LABELS: dict[str, tuple[str, str]] = {
 }
 
 _SHOULDER_Y = 0.45
-_REST_RIGHT = np.array([0.40, 0.92])
-_REST_LEFT = np.array([0.60, 0.92])
+# Laptop-webcam framing, matched to the developer's real L2 takes (P4): resting
+# hands visible at the bottom ~0.8 shoulder widths below the shoulders, signing in
+# front of the chest/face (<= ~0.2 below the shoulders).
+_REST_RIGHT = np.array([0.40, 0.66])
+_REST_LEFT = np.array([0.60, 0.66])
 _HAND_SIZE = 0.06
 
 
@@ -69,17 +72,17 @@ Path = Callable[[float, Variation], np.ndarray]  # phase 0..1 → wrist (x, y)
 _SIGNS: dict[str, tuple[Path, str]] = {
     "SYN_A": (
         lambda p, v: (
-            np.array([0.42, 0.52])
+            np.array([0.42, 0.40])
             + 0.07 * v.amplitude * np.array([math.cos(2 * math.pi * p), math.sin(2 * math.pi * p)])
         ),
         "open",
     ),
     "SYN_B": (
-        lambda p, v: np.array([0.38 + 0.08 * v.amplitude * math.sin(4 * math.pi * p), 0.38]),
+        lambda p, v: np.array([0.38 + 0.08 * v.amplitude * math.sin(4 * math.pi * p), 0.34]),
         "spread",
     ),
     "SYN_C": (
-        lambda p, v: np.array([0.45, 0.62 - 0.2 * v.amplitude * math.sin(math.pi * p)]),
+        lambda p, v: np.array([0.45, 0.50 - 0.18 * v.amplitude * math.sin(math.pi * p)]),
         "fist",
     ),
 }

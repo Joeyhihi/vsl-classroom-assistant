@@ -115,3 +115,10 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
   - **Segmentation is the next real risk:** 26/31 signs ended at the 4 s maximum. Even the synthetic HOLD takes show jitter (≈0.4 shoulder widths/s at ±0.002 noise) above the current 0.15 "still" threshold, so the threshold is unrealistic for tracker data.
   - Bug fixed alongside: wrist speed compared the hands without labels, so one hand vanishing while the other appeared counted as fast motion and could start a false unit.
   - Next: tune the thresholds from the owner's recordings (P4 first task).
+- **Segmenter tuned on real data (P4, 2026-10-18).** The owner recorded 1 take each of REST_DESK / REST_LAP / REST_DOWN / HOLD / DEV_01–03 (L2).
+  - **Root cause confirmed:** resting hands visible at the frame bottom sit about 0.6 shoulder widths below the shoulders, above the old 1.2 rest line, so they never counted as rest. Units ran to the 4 s maximum.
+  - Real held-still jitter (~0.34–0.6) exceeded the old 0.15 "still" threshold.
+  - New defaults: rest line 0.45, start 1.0, still 0.7, with smoothed (150 ms) per-hand speed.
+  - The analysis now counts only active wrists. Frame-edge flicker of resting hands had produced a false "NOT SEPARABLE".
+  - **Pose dropout:** in REST_DESK the pose model found no body in any frame while still detecting hands. Hands without shoulders are ignored, which is harmless at rest but would lose a sign. Watch for it during signing.
+  - **Provisional:** 1 take per label, one person, one framing. The rest line depends on camera framing. A live check is pending; re-validate with more takes and with Deaf signers.

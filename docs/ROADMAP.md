@@ -97,7 +97,12 @@ Work runs in **two parallel tracks**. A phase is complete only when **all** of i
 ### P4: Data tooling (requires B1 + B2)
 
 - **Owner decision (2026-10-18):** the tools are built *before* B1/B2, and only the developer records themselves. Recording anyone else still requires B1 + B2.
-- **First task: segmentation tuning.** Record REST_DESK / REST_LAP / REST_DOWN / HOLD / 3 own signs (5 takes each, L2), run `scripts/analyze_segmentation.py`, and set the segmenter thresholds (plus smoothing, if the data supports it) from the results. Exit: no false starts on rest takes, every sign take starts, and "too long" is no longer the dominant close reason on a rerun.
+- **First task: segmentation tuning — implemented 2026-10-18, live check pending.**
+  - Data (1 take per label, L2): resting hands visible at y ≈ 0.6 shoulder widths below the shoulders (inside the frame, above the old 1.2 line); raised hold at 0.37–0.40; signing at ≤ 0.18. Active-wrist jitter p95 ≤ 0.34; signing p95 ≥ 1.75.
+  - New defaults: rest line 0.45, start 1.0, still 0.7 (smoothed, 150 ms), per-hand speed.
+  - Recorder: the label is locked while takes exist, and 3 s or 6 s takes can be chosen.
+  - The synthetic signer was moved to laptop framing to match.
+  - Original task description: Record REST_DESK / REST_LAP / REST_DOWN / HOLD / 3 own signs (5 takes each, L2), run `scripts/analyze_segmentation.py`, and set the segmenter thresholds (plus smoothing, if the data supports it) from the results. Exit: no false starts on rest takes, every sign take starts, and "too long" is no longer the dominant close reason on a rerun.
 - **Deliverables:**
   - full recorder with consent ID, manifest, and condition tags;
   - manifest schema and validator;

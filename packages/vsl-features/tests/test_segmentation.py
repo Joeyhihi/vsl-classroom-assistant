@@ -98,7 +98,8 @@ def test_still_hold_ends_at_the_last_moving_frame() -> None:
     (u,) = run(synth_rest(0, 1000, 15, rng) + pattern + hold)
 
     assert u.reason == "still"
-    assert u.end_ms <= last.t_ms  # the motionless hold is not part of the unit
+    # The motionless hold is not part of the unit (speed smoothing lags ~1 time constant).
+    assert u.end_ms <= last.t_ms + 350
     assert 1400 <= u.hysteresis_ms <= 1700  # the wait is reported, not 0
 
 

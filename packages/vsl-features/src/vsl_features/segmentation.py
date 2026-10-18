@@ -15,6 +15,7 @@ Pauses shorter than `pause_tolerance_ms` inside a unit are tolerated.
 
 from __future__ import annotations
 
+import math
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Literal
@@ -29,10 +30,18 @@ SegmenterState = Literal["waiting_for_hands", "ready", "signing"]
 
 @dataclass(frozen=True)
 class SegmenterConfig:
-    rest_line: float = 1.2  # shoulder widths below the shoulder midpoint
-    start_speed: float = 0.6  # shoulder widths per second
+    """Defaults tuned on the developer's own L2 takes, laptop webcam (P4, 2026-10-18):
+    resting hands visible at the frame bottom sit at ~0.6 shoulder widths below the
+    shoulders, a raised hold at ~0.4, signing at <= 0.2; held-still jitter reaches
+    ~0.6 shoulder widths/s, signing ~1.3. PROVISIONAL (1 take per label, one
+    person, one framing); re-check with more takes and with Deaf signers.
+    """
+
+    rest_line: float = 0.45  # shoulder widths below the shoulder midpoint (was 1.2)
+    start_speed: float = 1.0  # smoothed shoulder widths per second (was 0.6, raw)
     start_ms: float = 120.0
-    still_speed: float = 0.15
+    still_speed: float = 0.7  # smoothed; above tracker jitter of a held pose (was 0.15)
+    speed_smoothing_ms: float = 150.0  # EMA time constant; 0 disables smoothing
     still_end_ms: float = 1500.0  # hands up but motionless this long ends the unit
     pause_tolerance_ms: float = 600.0  # rest/no hands this long ends the unit
     min_duration_ms: float = 300.0
@@ -100,12 +109,21 @@ class UtteranceSegmenter:
         self._preroll.clear()
         self._candidate_since: float | None = None
         self._prev: tuple[float, Wrists] | None = None
+        self._smoothed: float | None = None
         self._track: _Track | None = None
 
     def _speed(self, t_ms: float, wrists: Wrists) -> float:
-        speed = wrist_speed(self._prev, t_ms, wrists)
+        """Exponentially smoothed wrist speed: tracker jitter must not look like motion."""
+        prev_t = self._prev[0] if self._prev else None
+        raw = wrist_speed(self._prev, t_ms, wrists)
         self._prev = (t_ms, wrists)
-        return speed
+        tau = self.config.speed_smoothing_ms
+        if tau <= 0 or self._smoothed is None or prev_t is None or t_ms <= prev_t:
+            self._smoothed = raw
+        else:
+            alpha = 1.0 - math.exp(-(t_ms - prev_t) / tau)
+            self._smoothed += alpha * (raw - self._smoothed)
+        return self._smoothed
 
     def push(self, frame: Frame) -> Utterance | None:
         """Feed one frame; returns an utterance when one closes."""
@@ -171,6 +189,7 @@ class UtteranceSegmenter:
         assert track is not None
         self._track = None
         self._prev = None
+        self._smoothed = None
         self.state = "ready"
         # A "still" close ends the unit at the last MOVING frame: the motionless
         # hold is the wait, not part of the sign (and must not reach the classifier).
