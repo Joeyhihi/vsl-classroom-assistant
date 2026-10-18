@@ -11,6 +11,7 @@ import type {
   SampleSummary,
   SessionCreate,
   SessionCreated,
+  TranscriptionResponse,
   VocabularyResponse,
 } from "./generated/contracts";
 import { isHealthResponse, type HealthResponse } from "./types";
@@ -111,3 +112,28 @@ export const reviewSample = (sampleId: string, body: ReviewCreate) =>
 export const fetchVocabulary = () => sendJson<VocabularyResponse>("GET", "/vocabulary");
 export const sendFeedback = (body: FeedbackCreate) => sendJson<FeedbackCreated>("POST", "/feedback", body);
 export const deleteFeedback = () => sendJson<null>("DELETE", "/feedback");
+
+// --- speech-to-text (Phase 7, gated) --------------------------------------------------
+
+export async function transcribeAudio(wav: Blob): Promise<TranscriptionResponse> {
+  const form = new FormData();
+  form.append("audio", wav, "speech.wav");
+  form.append("language", "vi");
+  let response: Response;
+  try {
+    // CPU transcription of up to 30 s can take a while on the laptop.
+    response = await fetch(`${API_BASE}/stt/transcriptions`, {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch {
+    throw new ApiCallError("UNREACHABLE", "Backend did not respond");
+  }
+  const data: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = (data as { error?: { code?: string; message?: string } } | null)?.error;
+    throw new ApiCallError(error?.code ?? "INTERNAL", error?.message ?? `HTTP ${response.status}`);
+  }
+  return data as TranscriptionResponse;
+}

@@ -85,7 +85,8 @@ uv run --extra train python scripts/train_sign_model.py --model-id vsl-01   # P5
 | `VSL_DATA_ROOT` | (empty → platform user-data dir) | Research data, feedback, reports. Always outside the repo. |
 | `VSL_SERVER_EXTRACTION_ENABLED` | `false` | Allows L3 |
 | `VSL_STT_ENABLED` | `false` | P7 |
-| `VSL_STT_MODEL` / `VSL_STT_DEVICE` / `VSL_STT_COMPUTE_TYPE` | `small` / `cpu` / `int8` | P7 |
+| `VSL_STT_MODEL` / `VSL_STT_DEVICE` / `VSL_STT_COMPUTE_TYPE` | `small` / `cpu` / `int8` | P7. The model is a faster-whisper size name (downloaded to `model-artifacts/stt/` on first use) or a local CTranslate2 folder |
+| `VSL_STT_MAX_AUDIO_S` | `30` | Longest push-to-talk clip |
 | `VSL_HEAVY_MODEL_IDLE_UNLOAD_S` | `300` | ResourceManager |
 | `VSL_MIN_FREE_RAM_MB` / `VSL_MIN_FREE_VRAM_MB` | `1500` / `1500` | Guards (to re-tune after P3 and P7) |
 | `VSL_RESOURCE_SWEEP_INTERVAL_S` | `30` | How often idle heavy models are checked for unloading |
@@ -176,6 +177,25 @@ Prototype mode: the data is your own recordings (`DEV-01`), so the numbers are a
 4. Tuning: `--select gru|tcn|template` exports a specific model, `--max-far 0.1` relaxes the operating point (default 5 %), `--epochs`, `--seed`. If the report says "target not met", record more takes before relaxing anything.
 
 Never train while the demo is running, and never on the Mac.
+
+## 8d. Phase 7 workflow: speech-to-text subtitles (Windows, gated) {#phase-7-workflow}
+
+1. In `.env` set `VSL_STT_ENABLED=true`. Optionally set `VSL_STT_MODEL=base|small|medium`.
+2. Start the backend with every Windows extra:
+
+   ```powershell
+   uv run --extra windows python scripts/run_backend.py
+   ```
+
+   The first transcription downloads the model into `model-artifacts/stt/` (gitignored). Health shows `stt: ready … resident=false` until then.
+3. In "Giao tiếp" (Communicate), a **Phụ đề giọng nói** (voice subtitles) panel appears. Hold the button (or Space) while speaking and release it to get the text. It goes into the conversation as the teacher's message.
+4. **G7 measurements:** put consented clips in `DATA_ROOT/stt_testset/` (`name.wav` 16 kHz mono + `name.txt` reference), then:
+
+   ```powershell
+   uv run --extra windows python scripts/benchmark_stt.py --models base,small
+   ```
+
+   Run it with Chrome and the camera running, as in class. The report (`DATA_ROOT/reports/stt/`) has WER, latency, real-time factor and peak RSS, but no transcripts.
 
 ## 9. End-to-end tests (Playwright)
 

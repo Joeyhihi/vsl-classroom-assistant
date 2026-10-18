@@ -43,6 +43,7 @@ from vsl_backend.schemas.recordings import (
     SessionCreate,
     SessionCreated,
 )
+from vsl_backend.schemas.stt import TranscriptionResponse
 
 OUTPUT = WEB_DIR / "src" / "api" / "generated" / "contracts.ts"
 
@@ -72,6 +73,7 @@ MODELS: list[type[BaseModel]] = [
     ReviewCreate,
     FeedbackCreate,
     FeedbackCreated,
+    TranscriptionResponse,
 ]
 
 

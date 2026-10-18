@@ -21,15 +21,14 @@ def _sign_model_health(classifier: Classifier | None, error: str | None) -> Comp
 
 
 def build_health(
-    settings: Settings, classifier: Classifier | None, error: str | None = None
+    settings: Settings,
+    classifier: Classifier | None,
+    error: str | None = None,
+    stt: ComponentHealth | None = None,
 ) -> HealthResponse:
     components = HealthComponents(
         sign_model=_sign_model_health(classifier, error),
-        stt=(
-            ComponentHealth(status="unavailable", detail="not implemented until Phase 7")
-            if settings.stt_enabled
-            else ComponentHealth(status="disabled")
-        ),
+        stt=stt or ComponentHealth(status="disabled"),
         tts=ComponentHealth(status="disabled", detail="browser speechSynthesis is used"),
     )
     degraded = any(
@@ -48,4 +47,6 @@ def build_health(
 @router.get("/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
     state = request.app.state
-    return build_health(state.settings, state.classifier, state.classifier_error)
+    return build_health(
+        state.settings, state.classifier, state.classifier_error, state.stt.health()
+    )

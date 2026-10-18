@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.4",
     "platformdirs>=4.2",
     "psutil>=6",  # process RSS for diagnostics; RAM guard in P6
+    "python-multipart>=0.0.9",  # multipart audio upload for /stt/transcriptions (P7)
     "vsl-features",
 ]
 
@@ -22,6 +23,8 @@ dependencies = [
 server-extraction = ["mediapipe>=1.1", "pillow>=11"]
 # Phase 5 ONNX sign model (VSL_MODEL_MODE=onnx). Windows only; CPU (ADR-015).
 onnx = ["onnxruntime>=1.20"]
+# P7 speech-to-text, CPU int8 (ADR-015). Windows only; gated by VSL_STT_ENABLED.
+stt = ["faster-whisper>=1.1"]
 
 [tool.uv.sources]
 vsl-features = { workspace = true }

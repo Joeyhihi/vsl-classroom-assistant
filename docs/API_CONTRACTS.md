@@ -141,7 +141,9 @@ class FeedbackCreate(BaseModel):
     # no free-text comment in the MVP (privacy)
 ```
 
-### STT (P7)
+### STT (P7) — built, gated
+
+`VSL_STT_ENABLED=false` gives 503 `STT_UNAVAILABLE`. Wrong format, more than 30 s, or `language` other than `vi` gives 422. A body over `VSL_STT_MAX_BODY_BYTES` (about 2 MB) gives 413. Jobs run one at a time in a threadpool. Audio and text are never logged or stored.
 
 ```python
 class TranscriptSegment(BaseModel):

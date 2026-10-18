@@ -433,3 +433,8 @@ input[type="text"] {
 .large-display__empty { font-size: 2rem; color: var(--color-muted); }
 .large-display__controls { margin-top: var(--space-2); }
 .large-display:fullscreen { justify-content: center; padding: 4vw; }
+
+/* --- Phase 7 --- */
+.btn--ptt { min-height: 4rem; min-width: 14rem; font-size: 1.25rem; touch-action: none; user-select: none; }
+.btn--ptt-active { background: var(--color-danger); border-color: var(--color-danger); }
+.subtitles__text { margin: var(--space-2) 0 0; font-size: var(--size-prediction); font-weight: 700; line-height: 1.25; }

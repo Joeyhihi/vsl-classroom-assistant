@@ -49,6 +49,11 @@ export function createManualEntry(
   };
 }
 
+/** Teacher speech from push-to-talk (P7). The teacher saw it before it is shown. */
+export function createSpeechEntry(text: string, now: Date = new Date()): TranscriptEntry {
+  return { ...createManualEntry(text, "teacher", now), source: "speech" };
+}
+
 /** A confirmed sign prediction (never added without the user's confirmation). */
 export function createSignEntry(
   label: { gloss_id: string; text_vi: string; score: number; icon?: string },
