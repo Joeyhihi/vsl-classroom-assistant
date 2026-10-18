@@ -38,10 +38,19 @@ export class MediaPipeAssetError extends Error {
 export const modelsFor = (level: Exclude<ExtractionLevel, "L3">): ModelName[] =>
   level === "L1" ? ["holistic"] : ["hand", "pose"];
 
-const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04]; // .task files are zip archives
+// Zip end-of-central-directory signature "PK\x05\x06". MediaPipe .task files are
+// zip archives with a few bytes BEFORE the zip header, so like any zip reader we
+// look for this record at the end (22 bytes + up to 64 KiB comment), not "PK" at
+// the start.
+const EOCD = [0x50, 0x4b, 0x05, 0x06];
+const EOCD_SEARCH = 22 + 0xffff;
 
 export function isZip(bytes: Uint8Array): boolean {
-  return ZIP_MAGIC.every((b, i) => bytes[i] === b);
+  const stop = Math.max(0, bytes.length - EOCD_SEARCH);
+  for (let i = bytes.length - 22; i >= stop; i--) {
+    if (EOCD.every((b, k) => bytes[i + k] === b)) return true;
+  }
+  return false;
 }
 
 const isHtml = (response: Response) => (response.headers.get("content-type") ?? "").includes("text/html");

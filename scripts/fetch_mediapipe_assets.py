@@ -19,7 +19,10 @@ import json
 import platform
 import shutil
 import sys
+import time
 import urllib.request
+import zipfile
+from collections.abc import Callable
 from pathlib import Path
 
 from _common import REPO_ROOT, WEB_DIR
@@ -28,28 +31,68 @@ MANIFEST = REPO_ROOT / "scripts" / "mediapipe_assets.json"
 TARGET = WEB_DIR / "public" / "mediapipe"
 WASM_SOURCE = WEB_DIR / "node_modules" / "@mediapipe" / "tasks-vision" / "wasm"
 MAX_BYTES = 100 * 1024 * 1024
-ZIP_MAGIC = b"PK\x03\x04"  # .task files are zip archives
+RETRIES = 5
+RETRY_DELAY_S = 0.2
+
+
+def is_task_file(path: Path) -> bool:
+    """.task files are zip archives, but may have bytes BEFORE the zip header
+    (MediaPipe's start with 2-4 zero bytes), so check the end-of-central-directory
+    record like any zip reader does, not the first bytes."""
+    return zipfile.is_zipfile(path)
+
+
+def _retry(action: Callable[[], object], what: str) -> None:
+    """On Windows, antivirus scanners briefly lock newly written files."""
+    for attempt in range(RETRIES):
+        try:
+            action()
+            return
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            if attempt == RETRIES - 1:
+                raise
+            time.sleep(RETRY_DELAY_S * (attempt + 1))
+    raise AssertionError(f"unreachable: {what}")
+
+
+def remove(path: Path) -> None:
+    _retry(lambda: path.unlink(missing_ok=True), f"remove {path}")
+
+
+def replace(src: Path, dest: Path) -> None:
+    _retry(lambda: src.replace(dest), f"replace {dest}")
 
 
 def download(url: str, dest: Path) -> str:
+    """Download to a temp file, verify it, then move it into place.
+
+    Every file handle is closed before the file is removed or renamed: Windows
+    cannot delete or rename a file that is still open (WinError 32).
+    """
     if not url.startswith("https://storage.googleapis.com/mediapipe-models/"):
         sys.exit(f"error: refusing unexpected model URL {url}")
     digest = hashlib.sha256()
     size = 0
-    tmp = dest.with_suffix(".part")
+    too_large = False
+    tmp = dest.with_name(dest.name + ".part")
     with urllib.request.urlopen(url, timeout=60) as response, tmp.open("wb") as out:
         while chunk := response.read(1 << 16):
             size += len(chunk)
             if size > MAX_BYTES:
-                tmp.unlink(missing_ok=True)
-                sys.exit(f"error: {dest.name} is larger than {MAX_BYTES // 2**20} MB")
+                too_large = True
+                break
             digest.update(chunk)
             out.write(chunk)
-    with tmp.open("rb") as check:
-        if check.read(4) != ZIP_MAGIC:  # e.g. an HTML error page or captive portal
-            tmp.unlink()
-            sys.exit(f"error: {dest.name} is not a MediaPipe .task (zip) file")
-    tmp.replace(dest)
+    # Both handles are closed here.
+    if too_large:
+        remove(tmp)
+        sys.exit(f"error: {dest.name} is larger than {MAX_BYTES // 2**20} MB")
+    if not is_task_file(tmp):  # e.g. an HTML error page or captive portal
+        remove(tmp)
+        sys.exit(f"error: {dest.name} is not a MediaPipe .task (zip) file")
+    replace(tmp, dest)
     return digest.hexdigest()
 
 
@@ -76,13 +119,13 @@ def main() -> int:
         digest = download(entry["url"], TARGET / name)
         if entry["sha256"] is None:
             if not args.pin:
-                (TARGET / name).unlink()
+                remove(TARGET / name)
                 sys.exit(f"error: {name} has no pinned sha256; rerun with --pin, then commit")
             entry["sha256"] = digest
             changed = True
             print(f"  pinned sha256 {digest}")
         elif entry["sha256"] != digest:
-            (TARGET / name).unlink()
+            remove(TARGET / name)
             sys.exit(f"error: sha256 mismatch for {name}; review the upstream change first")
         else:
             print("  sha256 verified")

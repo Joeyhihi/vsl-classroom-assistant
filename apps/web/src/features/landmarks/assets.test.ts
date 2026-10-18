@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import { MediaPipeAssetError, isZip, loadMediaPipeAssets, modelsFor } from "./assets";
 
-const ZIP = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]);
+// Shaped like a real MediaPipe .task: leading zero bytes, local header, then the
+// 22-byte end-of-central-directory record (verified against the upstream files).
+const ZIP = new Uint8Array([
+  0, 0, 0, 0, 0x50, 0x4b, 0x03, 0x04, 1, 2, 3,
+  0x50, 0x4b, 0x05, 0x06, ...new Array<number>(18).fill(0),
+]);
 const HTML = new TextEncoder().encode("<!doctype html><html></html>");
 
 type Files = Record<string, { status?: number; body?: Uint8Array<ArrayBuffer>; type?: string }>;
@@ -69,5 +74,7 @@ describe("loadMediaPipeAssets", () => {
     expect(modelsFor("L2")).toEqual(["hand", "pose"]);
     expect(isZip(ZIP)).toBe(true);
     expect(isZip(HTML)).toBe(false);
+    // "PK" at the start is not enough, and leading bytes are allowed.
+    expect(isZip(new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...new Array<number>(30).fill(1)]))).toBe(false);
   });
 });
