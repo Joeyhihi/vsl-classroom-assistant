@@ -1,0 +1,67 @@
+"""Typed application settings, read from environment variables and `.env`.
+
+See docs/CROSS_PLATFORM_SETUP.md §5 for every variable.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Literal
+
+from platformdirs import user_data_dir
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+
+Environment = Literal["dev", "prod"]
+ModelMode = Literal["mock", "template", "onnx"]
+MockScript = Literal["cycle", "timer"]
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="VSL_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    env: Environment = "dev"
+    host: str = "127.0.0.1"
+    port: int = Field(default=8000, ge=1, le=65535)
+    allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+
+    model_mode: ModelMode = "mock"
+    mock_script: MockScript = "cycle"
+    sign_model_id: str | None = None
+
+    data_root: Path | None = None
+    stt_enabled: bool = False
+    server_extraction_enabled: bool = False
+
+    max_body_bytes: int = Field(default=64 * 1024, gt=0)
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    @model_validator(mode="after")
+    def _check_safety(self) -> Settings:
+        # ADR-016: scripted predictions must never reach a real (non-dev) setting.
+        if self.model_mode == "mock" and self.env != "dev":
+            raise ValueError("mock model mode requires VSL_ENV=dev")
+        # ADR-006: local-first; never listen on a network interface.
+        if self.host not in LOOPBACK_HOSTS:
+            raise ValueError(f"VSL_HOST must be a loopback address, got {self.host!r}")
+        if self.sign_model_id == "":
+            self.sign_model_id = None
+        return self
+
+    @property
+    def allowed_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def resolved_data_root(self) -> Path:
+        """Research data, feedback and reports. Always outside the repository."""
+        if self.data_root is not None:
+            return self.data_root.expanduser()
+        return Path(user_data_dir("vsl-classroom-assistant", appauthor=False))

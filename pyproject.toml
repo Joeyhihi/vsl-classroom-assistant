@@ -1,0 +1,59 @@
+# uv workspace root (ADR-008). Not a package itself; it pins the dev toolchain
+# and pulls in the workspace members. Members join per phase:
+#   P1: services/ai-backend   P3: packages/vsl-features   P5: ml
+[project]
+name = "vsl-classroom-assistant"
+version = "0.1.0"
+description = "Workspace root for VSL Classroom Assistant"
+requires-python = ">=3.12,<3.13"
+dependencies = ["vsl-backend"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "psutil>=6",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/ai-backend"]
+
+[tool.uv.sources]
+vsl-backend = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["services/ai-backend/src", "services/ai-backend"]
+extend-exclude = ["apps/web", "*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["vsl_backend", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"services/ai-backend/tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["services/ai-backend/src", "services/ai-backend/tests", "scripts"]
+
+[[tool.mypy.overrides]]
+module = ["psutil"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["services/ai-backend/tests"]
+addopts = "-q"
+markers = [
+    "windows_hw: needs real models/hardware; runs only on the Windows laptop with VSL_RUN_HW_TESTS=1",
+]

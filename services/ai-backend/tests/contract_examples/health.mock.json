@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "api_version": "v1",
+  "environment": "dev",
+  "model_mode": "mock",
+  "components": {
+    "sign_model": { "status": "mock", "detail": "scripted predictions (cycle)" },
+    "stt": { "status": "disabled", "detail": null },
+    "tts": { "status": "disabled", "detail": "browser speechSynthesis is used" }
+  }
+}

@@ -1,0 +1,19 @@
+[project]
+name = "vsl-backend"
+version = "0.1.0"
+description = "Local FastAPI backend for VSL Classroom Assistant"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Phase 1 runtime deps only. No onnxruntime / torch / mediapipe here until the
+# phase that needs them (ADR-008, ADR-015, ADR-016).
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "platformdirs>=4.2",
+]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"

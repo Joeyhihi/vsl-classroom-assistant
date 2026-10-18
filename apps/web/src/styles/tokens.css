@@ -1,0 +1,41 @@
+/* Design tokens. Contrast targets: ≥4.5:1 text, ≥7:1 predictions (docs/UX_AND_ACCESSIBILITY.md). */
+:root {
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --size-body: 1.125rem; /* 18px */
+  --size-prediction: 2rem; /* 32px, used from Phase 3 */
+  --size-large-display: 6rem; /* 96px, used from Phase 6 */
+
+  --color-bg: #ffffff;
+  --color-surface: #f4f5f7;
+  --color-text: #111418;
+  --color-muted: #3d4651;
+  --color-border: #c4cad3;
+  --color-focus: #0b57d0;
+
+  --color-info: #0b57d0;
+  --color-success: #146c2e;
+  --color-warning: #8a4b00;
+  --color-danger: #b3261e;
+  --color-mock-bg: #5b1a8c;
+  --color-mock-text: #ffffff;
+
+  --radius: 0.5rem;
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #111418;
+    --color-surface: #1d2229;
+    --color-text: #f2f4f7;
+    --color-muted: #c4cad3;
+    --color-border: #3d4651;
+    --color-focus: #8ab4f8;
+    --color-info: #8ab4f8;
+    --color-success: #6dd58c;
+    --color-warning: #ffb95c;
+    --color-danger: #ffb4ab;
+  }
+}
