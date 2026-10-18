@@ -3,6 +3,7 @@
 
 import type { FeatureSpecWire, WireFrame } from "../../api/generated/contracts";
 import type { ExtractionLevel } from "../metrics/ladder";
+import { loadMediaPipeAssets, type MediaPipeAssets } from "./assets";
 import type { WorkerRequest, WorkerResponse } from "./landmark.worker";
 
 export type ExtractorMode = "worker" | "main";
@@ -20,6 +21,7 @@ const WORKER_INIT_TIMEOUT_MS = 20_000;
 async function createWorkerExtractor(
   level: Exclude<ExtractionLevel, "L3">,
   spec: FeatureSpecWire,
+  assets: MediaPipeAssets,
 ): Promise<Extractor> {
   const worker = new Worker(new URL("./landmark.worker.ts", import.meta.url), { type: "module" });
   const send = (msg: WorkerRequest, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
@@ -35,7 +37,8 @@ async function createWorkerExtractor(
       clearTimeout(timer);
       reject(new Error("worker failed"));
     };
-    send({ type: "init", level, spec, baseUrl: window.location.origin });
+    // Model bytes are cloned (not transferred) so the main-thread fallback can reuse them.
+    send({ type: "init", level, spec, assets });
   }).catch((error: unknown) => {
     worker.terminate();
     throw error;
@@ -69,9 +72,10 @@ async function createWorkerExtractor(
 async function createMainThreadExtractor(
   level: Exclude<ExtractionLevel, "L3">,
   spec: FeatureSpecWire,
+  assets: MediaPipeAssets,
 ): Promise<Extractor> {
   const { createRunner } = await import("./mediapipeRunner");
-  const runner = await createRunner(level, spec, window.location.origin, false);
+  const runner = await createRunner(level, spec, assets, false);
   return {
     mode: "main",
     delegate: runner.delegate,
@@ -84,10 +88,13 @@ export async function createExtractor(
   level: Exclude<ExtractionLevel, "L3">,
   spec: FeatureSpecWire,
 ): Promise<Extractor> {
+  // Missing/invalid assets throw MediaPipeAssetError here: no point trying either mode.
+  const assets = await loadMediaPipeAssets(level);
   try {
-    return await createWorkerExtractor(level, spec);
-  } catch {
+    return await createWorkerExtractor(level, spec, assets);
+  } catch (workerError) {
     // e.g. the WASM loader or GPU delegate is not usable inside a worker.
-    return createMainThreadExtractor(level, spec);
+    console.warn("MediaPipe worker unavailable, using the main thread:", String(workerError));
+    return createMainThreadExtractor(level, spec, assets);
   }
 }

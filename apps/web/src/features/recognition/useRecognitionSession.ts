@@ -6,6 +6,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import type { SessionStart, WireFrame } from "../../api/generated/contracts";
 import { NO_RECONNECT_CODES, RecognitionSocket, recognitionUrl, type ServerMessage } from "../../api/ws";
+import { MediaPipeAssetError } from "../landmarks/assets";
 import {
   CameraLandmarkSource,
   ReplayLandmarkSource,
@@ -113,8 +114,14 @@ export function useRecognitionSession({ sourceKind, stream, level, minFps = DEFA
             .then(() => {
               if (source.kind !== "replay") monitor = new LadderMonitor(lvl, performance.now(), { ...DEFAULT_LADDER, minFps });
             })
-            .catch(() => {
-              dispatch({ type: "failed", reason: "EXTRACTOR_FAILED" });
+            .catch((error: unknown) => {
+              if (error instanceof MediaPipeAssetError) {
+                dispatch({ type: "failed", reason: "MEDIAPIPE_ASSETS_MISSING", detail: error.missing.join(", ") });
+              } else {
+                const detail = error instanceof Error ? error.message : undefined;
+                dispatch({ type: "failed", reason: "EXTRACTOR_FAILED", detail });
+              }
+              fatalSeen = true;
               socket.stop();
             });
           metricsTimer = setInterval(() => {

@@ -28,6 +28,7 @@ MANIFEST = REPO_ROOT / "scripts" / "mediapipe_assets.json"
 TARGET = WEB_DIR / "public" / "mediapipe"
 WASM_SOURCE = WEB_DIR / "node_modules" / "@mediapipe" / "tasks-vision" / "wasm"
 MAX_BYTES = 100 * 1024 * 1024
+ZIP_MAGIC = b"PK\x03\x04"  # .task files are zip archives
 
 
 def download(url: str, dest: Path) -> str:
@@ -44,6 +45,10 @@ def download(url: str, dest: Path) -> str:
                 sys.exit(f"error: {dest.name} is larger than {MAX_BYTES // 2**20} MB")
             digest.update(chunk)
             out.write(chunk)
+    with tmp.open("rb") as check:
+        if check.read(4) != ZIP_MAGIC:  # e.g. an HTML error page or captive portal
+            tmp.unlink()
+            sys.exit(f"error: {dest.name} is not a MediaPipe .task (zip) file")
     tmp.replace(dest)
     return digest.hexdigest()
 
@@ -82,6 +87,8 @@ def main() -> int:
         else:
             print("  sha256 verified")
 
+    print(f"\nAssets are in {TARGET.relative_to(REPO_ROOT)} (served at /mediapipe/).")
+    print("If you use run_web.py --preview, it rebuilds and copies them into dist/ automatically.")
     if changed:
         MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"\nUpdated {MANIFEST.relative_to(REPO_ROOT)}; commit it to verify later fetches.")

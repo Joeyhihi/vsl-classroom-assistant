@@ -124,6 +124,7 @@ sequenceDiagram
 - `features/metrics/ladder.ts` holds the pure decision logic (unit-tested). `useRecognitionSession` feeds it fps once per second.
 - When L1 is too slow, `extractionLevel` in settings becomes L2 for the next session. When L2 is too slow, the panel shows a button; pressing it stops the session and starts a new one at L3, which counts as a session boundary.
 - L1/L2 run through `features/landmarks/extractor.ts`, which tries a module Web Worker (`landmark.worker.ts`, ES-module WASM loader) and falls back to the main thread. The mode in use is shown in Settings → Hiệu năng (performance).
+- Assets (`features/landmarks/assets.ts`) are checked on the main thread before any MediaPipe task is created: the WASM files must exist and each `.task` must be a zip. Model bytes are then passed as `modelAssetBuffer`. `vite.mediapipe-guard.ts` makes missing `/mediapipe/*` files a 404 instead of the SPA fallback page.
 - None of this has executed yet (no MediaPipe on the Mac); the Windows procedure is in CROSS_PLATFORM_SETUP §11.
 
 Rules for moving between levels:

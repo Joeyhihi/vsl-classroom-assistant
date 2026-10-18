@@ -25,6 +25,7 @@ export interface RecognitionState {
   lastRejected: PredictionMessage | null;
   droppedFrames: number;
   failure: string | null; // error code or close code, for the UI message
+  failureDetail: string | null; // e.g. the missing asset files
   reconnectAttempt: number;
 }
 
@@ -41,6 +42,7 @@ export const initialRecognitionState: RecognitionState = {
   lastRejected: null,
   droppedFrames: 0,
   failure: null,
+  failureDetail: null,
   reconnectAttempt: 0,
 };
 
@@ -52,13 +54,13 @@ export type RecognitionAction =
   | { type: "resolve_candidate" } // confirmed or dismissed
   | { type: "paused" }
   | { type: "reconnecting"; attempt: number }
-  | { type: "failed"; reason: string }
+  | { type: "failed"; reason: string; detail?: string }
   | { type: "stopped" };
 
 export function recognitionReducer(state: RecognitionState, action: RecognitionAction): RecognitionState {
   switch (action.type) {
     case "start":
-      return { ...state, phase: "connecting", failure: null, serverState: null };
+      return { ...state, phase: "connecting", failure: null, failureDetail: null, serverState: null };
     case "session_started":
       return {
         ...state,
@@ -87,7 +89,7 @@ export function recognitionReducer(state: RecognitionState, action: RecognitionA
     case "reconnecting":
       return { ...state, phase: "reconnecting", reconnectAttempt: action.attempt, serverState: null };
     case "failed":
-      return { ...state, phase: "failed", failure: action.reason, serverState: null };
+      return { ...state, phase: "failed", failure: action.reason, failureDetail: action.detail ?? null, serverState: null };
     case "stopped":
       return { ...initialRecognitionState, skipped: state.skipped };
   }

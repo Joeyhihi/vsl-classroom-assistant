@@ -103,7 +103,7 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | `src/components/` | `camera/` (CameraPanel, CameraPreview, CameraSelector), `transcript/` (TranscriptPanel), `compose/` (ManualTextInput), `speech/` (TtsStatus), `system/` (ConnectionBanner, BackendStatus), `ui/` (StatusLine) in P2; `recognition/` from P3 | P2+ |
 | `src/features/` | Hooks and logic: `health/` (P1, backend status polling), `camera/`, `landmarks/`, `recognition/`, `transcript/`, `tts/`, `settings/`, `recorder/` (P3), `stt/` (P7) | P2+ |
 | `src/api/` | `http.ts`, `ws.ts` (RecognitionSocket: batching, heartbeat, close codes), `types.ts` (health runtime guard), `generated/contracts.ts` (generated, committed) | P1+ |
-| `src/features/landmarks/` | `packer.ts` (MediaPipe → wire frames using the server spec), `sources.ts` (Replay / Camera L1-L2 / Server L3), `extractor.ts` + `landmark.worker.ts` + `mediapipeRunner.ts` (worker spike) | P3 |
+| `src/features/landmarks/` | `packer.ts` (MediaPipe → wire frames using the server spec), `sources.ts` (Replay / Camera L1-L2 / Server L3), `assets.ts` (load and validate WASM + models), `extractor.ts` + `landmark.worker.ts` + `mediapipeRunner.ts` (worker spike) | P3 |
 | `src/features/metrics/` | `stats.ts` (fps, percentiles), `ladder.ts` (ADR-002 decision logic) | P3 |
 | `src/features/recognition/` | `recognitionMachine.ts` (reducer, candidate policy), `useRecognitionSession.ts` (orchestration, reconnect, pause, metrics) | P3 |
 | `src/components/recognition/` | RecognitionPanel, PredictionCard, LandmarkOverlay, PerformancePanel | P3 |
@@ -113,6 +113,7 @@ There is deliberately no combined launcher. The frontend and backend always run 
 | `src/styles/` | `tokens.css` (colours, sizes, focus ring), `global.css` | P1 |
 | `src/test/` | Vitest setup and synthetic fixtures | P1 |
 | `e2e/` | Playwright: fake camera, permission flows, manual text and speech, offline banner, axe, no-egress (P2); replay recognition (P3). `helpers.ts` mocks health and stubs speech. | P2–P3 |
+| `vite.mediapipe-guard.ts` | Vite plugin: missing `/mediapipe/*` files return 404 (dev and preview), never the SPA `index.html` | P3 |
 | `playwright.config.ts` | Builds and serves the production app; local runs use installed Chrome, CI uses Playwright Chromium | P2 |
 | `public/mediapipe/` | Self-hosted MediaPipe assets (gitignored) | P3 |
 

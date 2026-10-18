@@ -2,6 +2,8 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import { mediapipeAssetsGuard } from "./vite.mediapipe-guard";
+
 // The backend binds to 127.0.0.1 only; the dev/preview servers proxy /api to it
 // so the browser talks to a single origin (docs/ARCHITECTURE.md).
 const backendPort = process.env.VSL_PORT ?? "8000";
@@ -10,13 +12,13 @@ const backend = {
 };
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), mediapipeAssetsGuard()],
   envDir: "../..", // share the repository-root .env (only VITE_* is exposed)
   server: { host: "localhost", port: 5173, strictPort: true, proxy: backend },
   preview: { host: "localhost", port: 5173, strictPort: true, proxy: backend },
   test: {
     environment: "jsdom",
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "*.test.ts"],
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
   },
