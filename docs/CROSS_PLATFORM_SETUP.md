@@ -141,6 +141,7 @@ The existing `.gitignore` plus the P1 additions exclude:
 | Vite fails on Windows with a missing `@rollup/rollup-win32-*` | See the npm risk above: delete `node_modules`, run `npm ci`, and regenerate the lockfile if needed |
 | Backend refuses to start: "mock mode requires VSL_ENV=dev" | Set `VSL_ENV=dev` or choose another `VSL_MODEL_MODE` |
 | Browser console: `StartGraph failed: UNKNOWN: Unable to open zip archive` | The MediaPipe model was missing, and older builds received Vite's `index.html` instead. Run `uv run python scripts/bootstrap.py --with-models --pin` (step 1 of §11) and reload. Since the fix, the app reports "Thiếu tệp MediaPipe" (MediaPipe files missing) with the file names, and `/mediapipe/*` returns 404 when a file is absent. Check that `apps/web/public/mediapipe/holistic_landmarker.task` exists (about 13.7 MB). |
+| `fetch_mediapipe_assets.py`: `PermissionError: [WinError 32]` | Fixed: the script deleted a temp file while it was still open, after wrongly rejecting a valid model. Pull the latest `main` and rerun `bootstrap.py --with-models --pin`. If a `*.task.part` file was left behind in `apps/web/public/mediapipe/`, delete it. |
 | CRLF line-ending warnings | `.gitattributes` normalises them. Run `git add --renormalize .` once if needed. |
 
 ## 11. Phase 3 Windows test procedure {#phase-3-windows-test-procedure}

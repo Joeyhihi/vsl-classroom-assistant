@@ -90,3 +90,8 @@ Medium and low findings: P1 overengineering trimmed; no CUDA torch; no symlinks;
   - the UI names the missing files and the command to run.
 
   `fetch_mediapipe_assets.py` also refuses to save a non-zip download. Upstream URLs were checked with HEAD requests on 2026-10-18 (holistic 13.7 MB, hand 7.8 MB, pose lite 5.8 MB).
+- **`fetch_mediapipe_assets.py` failed on Windows with WinError 32** (second Windows run). There were two bugs:
+  1. **Wrong zip check (mine).** Both the script and the browser required `.task` files to start with `PK`. MediaPipe's real files start with 2–4 zero bytes before the zip header; this was checked with HTTP Range requests on 2026-10-18 (first bytes `00000000504b0304` / `0000504b0304`, last 22 bytes `504b0506…`). Valid models were rejected. Both now detect the end-of-central-directory record (`zipfile.is_zipfile` in Python, an EOCD scan in the browser).
+  2. **Deleting an open file.** The rejection path called `unlink()` inside the `with` block that still held the file open. macOS allows that; Windows refuses. Removing and renaming now happen only after every handle is closed, with a short retry (5 attempts, growing delay) for antivirus locks on new files.
+
+  Regression tests simulate Windows' "cannot delete an open file" rule, and fail against the old script.
