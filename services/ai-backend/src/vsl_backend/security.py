@@ -37,6 +37,8 @@ CallNext = Callable[[Request], Awaitable[Response]]
 def install_security_middleware(app: FastAPI, settings: Settings) -> None:
     allowed_origins = frozenset(settings.allowed_origin_list)
     max_body = settings.max_body_bytes
+    # Recorder uploads carry a whole take (up to ~6 s of landmarks).
+    recording_max_body = settings.recording_max_body_bytes
 
     @app.middleware("http")
     async def _security(request: Request, call_next: CallNext) -> Response:
@@ -46,19 +48,22 @@ def install_security_middleware(app: FastAPI, settings: Settings) -> None:
         response: Response
         origin = request.headers.get("origin")
         content_length = request.headers.get("content-length")
+        limit = (
+            recording_max_body if request.url.path.startswith("/api/v1/recordings/") else max_body
+        )
         if origin is not None and origin not in allowed_origins:
             response = error_response(
                 request, ErrorCode.ORIGIN_FORBIDDEN, "Origin not allowed", 403
             )
         elif content_length is not None and (
-            not content_length.isdigit() or int(content_length) > max_body
+            not content_length.isdigit() or int(content_length) > limit
         ):
             response = error_response(
                 request,
                 ErrorCode.PAYLOAD_TOO_LARGE,
                 "Request body too large",
                 413,
-                {"max_bytes": max_body},
+                {"max_bytes": limit},
             )
         else:
             response = await call_next(request)

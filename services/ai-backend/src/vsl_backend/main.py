@@ -14,6 +14,7 @@ from vsl_backend.config import Settings
 from vsl_backend.errors import install_error_handlers
 from vsl_backend.logging_config import configure_logging
 from vsl_backend.recognition.classifiers import build_classifier
+from vsl_backend.recording.service import RecorderService
 from vsl_backend.security import install_security_middleware
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.classifier = load.classifier
     app.state.classifier_error = load.error
+    app.state.recorder = RecorderService(settings)
 
     install_error_handlers(app)
     install_security_middleware(app, settings)

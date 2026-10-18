@@ -16,6 +16,8 @@ export type ErrorCode =
   | "MODEL_UNAVAILABLE"
   | "RESOURCE_EXHAUSTED"
   | "STT_UNAVAILABLE"
+  | "RECORDER_DISABLED"
+  | "CONSENT_REQUIRED"
   | "INTERNAL";
 
 export interface Contracts {
@@ -28,6 +30,14 @@ export interface Contracts {
   Ping?: Ping;
   Pong?: Pong;
   PredictionMessage?: PredictionMessage;
+  RecorderConfig?: RecorderConfig;
+  ReviewCreate?: ReviewCreate;
+  SampleCreateContract?: SampleCreateContract;
+  SampleFrames?: SampleFrames;
+  SampleList?: SampleList;
+  SampleSummary?: SampleSummary;
+  SessionCreate?: SessionCreate;
+  SessionCreated?: SessionCreated;
   SessionStart?: SessionStart;
   SessionStarted?: SessionStarted;
   SessionStop?: SessionStop;
@@ -219,6 +229,120 @@ export interface UtteranceSpan {
   end_ms: number;
   n_frames: number;
   start_ms: number;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "RecorderConfig".
+ */
+export interface RecorderConfig {
+  /**
+   * Local DATA_ROOT path (shown to the developer)
+   */
+  data_root: string | null;
+  developer_only_vocabulary: boolean;
+  enabled: boolean;
+  items: RecorderVocabularyItem[];
+  /**
+   * Why the recorder is unavailable, if it is
+   */
+  reason: string | null;
+  third_party_allowed: boolean;
+  vocabulary_version: string | null;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "RecorderVocabularyItem".
+ */
+export interface RecorderVocabularyItem {
+  gloss_id: string;
+  icon: string;
+  sample_kind: "target" | "distractor" | "background";
+  text_vi: string;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "ReviewCreate".
+ */
+export interface ReviewCreate {
+  reject_reason?: ("wrong_sign" | "incomplete" | "out_of_frame" | "tracking_failure" | "other") | null;
+  relabel_to?: string | null;
+  reviewer: string;
+  status: "accepted" | "rejected" | "relabelled";
+}
+/**
+ * Typed view of `SampleCreate` for code generation.
+ *
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SampleCreateContract".
+ */
+export interface SampleCreateContract {
+  frames: WireFrame[];
+  label: string;
+  take_ms: number;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SampleFrames".
+ */
+export interface SampleFrames {
+  frames: WireFrame[];
+  image_height: number;
+  image_width: number;
+  sample_id: string;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SampleList".
+ */
+export interface SampleList {
+  samples: SampleSummary[];
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SampleSummary".
+ */
+export interface SampleSummary {
+  collected_at: string;
+  dropped_frames: number;
+  fps: number;
+  /**
+   * Effective label (relabel applied)
+   */
+  label: string;
+  n_frames: number;
+  recorded_label: string;
+  reject_reason: string | null;
+  sample_id: string;
+  sample_kind: "target" | "distractor" | "background";
+  session_id: string;
+  signer_id: string;
+  status: "pending" | "accepted" | "rejected" | "relabelled";
+  take_ms: number;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SessionCreate".
+ */
+export interface SessionCreate {
+  conditions?: {
+    [k: string]: string | undefined;
+  };
+  consent_id: string;
+  dominant_hand?: "right" | "left";
+  extractor_backend: string;
+  extractor_version: string;
+  feature_spec_version: string;
+  image_height: number;
+  image_width: number;
+  signer_id: string;
+}
+/**
+ * This interface was referenced by `Contracts`'s JSON-Schema
+ * via the `definition` "SessionCreated".
+ */
+export interface SessionCreated {
+  session_id: string;
+  signer_id: string;
 }
 /**
  * This interface was referenced by `Contracts`'s JSON-Schema

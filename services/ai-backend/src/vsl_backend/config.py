@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     heartbeat_timeout_s: float = Field(default=15.0, gt=0)
     cooldown_ms: float = Field(default=1500.0, ge=0)
 
+    # Phase 4 recorder (developer self-recording). Off by default; data goes to
+    # DATA_ROOT, never into the repository.
+    recorder_enabled: bool = False
+    # Recording other people stays blocked until the consent package (B2) is
+    # approved; do not enable before that (docs/DATASET_AND_ANNOTATION.md §3).
+    third_party_recording_enabled: bool = False
+    dev_vocabulary_path: Path = Path("ml/vocabulary/vocabulary.dev.json")
+    recording_max_body_bytes: int = Field(default=2 * 1024 * 1024, gt=0)
+
     max_body_bytes: int = Field(default=64 * 1024, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
